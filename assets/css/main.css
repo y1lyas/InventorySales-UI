@@ -1,0 +1,16 @@
+ :root {
+            --primary-blue: #0066FF; /* Scalar tarzı canlı mavi */
+            --deep-black: #121212;
+            --soft-gray: #F5F5F7;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #ffffff; 
+            color: var(--deep-black);
+            letter-spacing: -0.02em;
+        }
+          .navbar {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eaeaea;
+        }
+        .navbar-brand { font-weight: 700; font-size: 1.2rem; }

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Features - InventorySales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="/assets/css/features.css" rel="stylesheet">
+    <link href="/assets/css/main.css" rel="stylesheet">
+</head>
+<body>
+        <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">InventorySales</a>
+            <div class="d-flex gap-4">
+                <a href="index.html" class="nav-link-custom">Home</a>
+                <a href="dashboard.html" class="nav-link-custom">Dashboard</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="py-5 text-center">
+        <div class="container">
+            <h1 class="display-5 fw-bold mb-3">Business Overview</h1>
+            <p class="lead text-muted mx-auto" style="max-width: 600px;">
+                A simple inventory and sales business flow with categories, product stock control, query support, and basic sale creation.
+            </p>
+        </div>
+    </header>
+
+    <section class="pb-5">
+        <div class="container">
+            <div class="row g-4">
+                
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <span class="tech-badge">Category Management</span>
+                        <h3 class="fw-bold h4">Organize Products by Category</h3>
+                        <p class="text-muted">Create and manage product categories to keep inventory organized and easy to search.</p>
+                        <ul class="list-unstyled mt-3">
+                            <li class="mb-2"> <strong>Product grouping:</strong> Categories help classify items clearly.</li>
+                            <li class="mb-2"> <strong>Query support:</strong> Search products by category or related filters.</li>
+                            <li> <strong>Business clarity:</strong> Easier stock review and product lookup for business users.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <span class="tech-badge">Product Stock</span>
+                        <h3 class="fw-bold h4">Add and Adjust Inventory</h3>
+                        <p class="text-muted">Create products, increase stock, and decrease inventory as items are sold or returned.</p>
+                        <ul class="list-unstyled mt-3">
+                            <li class="mb-2"> <strong>Stock control:</strong> Add quantity when new inventory arrives.</li>
+                            <li class="mb-2"> <strong>Stock reduction:</strong> Decrease quantity when products are sold.</li>
+                            <li> <strong>Product queries:</strong> Check stock levels and product details anytime.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <span class="tech-badge">Sales Workflow</span>
+                        <h3 class="fw-bold h4">Create Basic Sales</h3>
+                        <p class="text-muted">Record sales in the system and automatically reduce inventory for each sale.</p>
+                        <ul class="list-unstyled mt-3">
+                            <li class="mb-2"> <strong>Simple sale flow:</strong> Create a sale record without complex payment details.</li>
+                            <li class="mb-2"> <strong>Inventory impact:</strong> Sale creation lowers stock levels immediately.</li>
+                            <li> <strong>No payment processing:</strong> Business focus remains on stock and sales records.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="feature-card">
+                        <span class="tech-badge">Business Focus</span>
+                        <h3 class="fw-bold h4">Core Inventory Sales Use Case</h3>
+                        <p class="text-muted">A lean business solution for managing categories, products, stock changes, and basic sales tracking.</p>
+                        <ul class="list-unstyled mt-3">
+                            <li class="mb-2"> <strong>Business-oriented:</strong> Designed for operational inventory and sales management.</li>
+                            <li class="mb-2"> <strong>Lightweight:</strong> No billing, payment gateway, or invoicing complexity.</li>
+                            <li> <strong>Practical:</strong> Supports the essential flow of stock management and sale recording.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="text-center mt-5 pt-4">
+                <a href="dashboard.html" class="btn btn-dark btn-lg px-5 fw-semibold">Try the Business Flow</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-4 border-top mt-5">
+        <div class="container text-center text-muted small">
+            &copy; 2026 InventorySales Project. Built with .NET 8 & Clean Architecture.
+        </div>
+    </footer>
+
+</body>
+</html>

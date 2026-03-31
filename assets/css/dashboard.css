@@ -1,0 +1,22 @@
+ :root {
+            --bg-color: #ffffff;
+            --sidebar-bg: #f9fafb;
+            --border-color: #e5e7eb;
+            --accent-color: #3b82f6;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); }
+        
+        /* Layout Structure */
+        .wrapper { display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color); padding: 2rem 1.5rem; }
+        .main-content { flex: 1; padding: 2rem 3rem; }
+
+        /* Custom UI Elements */
+        .nav-link { color: #4b5563; font-weight: 500; padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 0.5rem; transition: all 0.2s; }
+        .nav-link:hover, .nav-link.active { background: #eff6ff; color: var(--accent-color); }
+        
+        .card-custom { border: 1px solid var(--border-color); border-radius: 12px; box-shadow: none; }
+        .table thead th { background: #f9fafb; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; border-top: none; }
+        
+        /* Empty State Styling */
+        #empty-state { display: none; padding: 5rem 2rem; border: 2px dashed var(--border-color); border-radius: 16px; }
