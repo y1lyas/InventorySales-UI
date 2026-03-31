@@ -19,4 +19,4 @@
         .table thead th { background: #f9fafb; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; border-top: none; }
         
         /* Empty State Styling */
-        #empty-state { display: none; padding: 5rem 2rem; border: 2px dashed var(--border-color); border-radius: 16px; }
+        #empty-state { padding: 5rem 2rem; border: 2px dashed var(--border-color); border-radius: 16px; }

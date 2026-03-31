@@ -17,11 +17,15 @@ async function fetchAndRenderProducts() {
 
         if (!response.ok) throw new Error('Failed to fetch products');
 
-        const products = await response.json();
+        const data = await response.json();
+        console.log('API Response:', data);  // Debug log to see structure
+        const products = data.products || data.data || (Array.isArray(data) ? data : []);
 
-        if (!products || products.length === 0) {
+        if (!Array.isArray(products) || products.length === 0) {
+            console.log('Showing empty state');
             showEmptyState(true);
         } else {
+            console.log('Rendering products:', products.length);
             showEmptyState(false);
             renderTable(products, tbody);
         }
