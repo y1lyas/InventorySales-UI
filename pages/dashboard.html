@@ -30,12 +30,12 @@
                 <h2 class="fw-bold mb-1">Products</h2>
                 <p class="text-muted small">Manage your inventory levels and catalog.</p>
             </div>
-            <button class="btn btn-dark px-4 py-2 fw-semibold" id="btnAddProduct">
+            <button class="btn btn-dark px-4 py-2 fw-semibold" id="btnAddProduct" onclick="showAddProductModal()">
                 <i class="bi bi-plus-lg me-2"></i>Add Product
             </button>
         </header>
 
-        <div id="table-view" class="card card-custom overflow-hidden">
+        <div id="table-view" class="card card-custom overflow-hidden d-none">
             <table class="table mb-0 align-middle">
                 <thead>
                     <tr>
@@ -50,8 +50,18 @@
                 <tbody id="product-list-body">
                     </tbody>
             </table>
+            <div id="pagination-container" class="d-none border-top px-4 py-3">
+                <nav aria-label="Product pagination">
+                    <ul class="pagination justify-content-end mb-0" id="pagination"></ul>
+                </nav>
+            </div>
         </div>
-        <div id="empty-state" class="text-center">
+        <div id="loading-state" class="text-center py-5">
+            <div class="spinner-border mb-4 p-4" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div id="empty-state" class="text-center d-none">
             <div class="mb-4 text-muted">
                 <i class="bi bi-box-seam" style="font-size: 4rem;"></i>
             </div>
@@ -61,7 +71,50 @@
         </div>
     </main>
 </div>
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">Add New Product</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addProductForm">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" class="form-control" id="pName" required placeholder="e.g. iPhone 15 Pro">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" id="pCategory">
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">SKU</label>
+                            <input type="text" class="form-control" id="pSku" required placeholder="SKU-123">
+                        </div>
+                    </div>
+                    <div class="row align-items-end">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">TRY</span>
+                                <input type="number" min="0.01" step="0.01" class="form-control" id="pPrice" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary py-2 px-4">Save Product</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/dashboard.js"></script>
+    <script src="/js/dashboard/dashboard.js"></script>
+    <script src="/js/dashboard/addProductModal.js"></script>
 </body>
 </html>
