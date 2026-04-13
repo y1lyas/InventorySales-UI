@@ -5,6 +5,9 @@ class DashboardView {
         this.pagination = document.getElementById('pagination');
         this.tableView = document.getElementById('table-view');
         this.emptyState = document.getElementById('empty-state');
+        this.emptyStateTitle = document.getElementById('empty-state-title');
+        this.emptyStateText = document.getElementById('empty-state-text');
+        this.emptyStateButton = document.getElementById('empty-state-button');
         this.loadingState = document.getElementById('loading-state');
     }
 
@@ -21,7 +24,33 @@ class DashboardView {
         this.emptyState?.classList.add('d-none');
     }
 
-    showEmptyState() {
+    showEmptyState(options = {}) {
+        const {
+            title = 'Your inventory is empty',
+            text = 'Start by adding your first product to manage your stock levels.',
+            buttonText = 'Create Your First Product',
+            buttonAction = window.showAddProductModal
+        } = options;
+
+        if (this.emptyStateTitle) {
+            this.emptyStateTitle.textContent = title;
+        }
+
+        if (this.emptyStateText) {
+            this.emptyStateText.textContent = text;
+        }
+
+        if (this.emptyStateButton) {
+            if (buttonText && buttonAction) {
+                this.emptyStateButton.classList.remove('d-none');
+                this.emptyStateButton.textContent = buttonText;
+                this.emptyStateButton.onclick = buttonAction;
+            } else {
+                this.emptyStateButton.classList.add('d-none');
+                this.emptyStateButton.onclick = null;
+            }
+        }
+
         this.loadingState?.classList.add('d-none');
         this.tableView?.classList.add('d-none');
         this.emptyState?.classList.remove('d-none');

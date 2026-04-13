@@ -1,4 +1,5 @@
 let currentPage = 1;
+let searchDebounceTimeout;
 const pageSize = 10;
 
 const productService = new ProductService(ProductApi, pageSize);
@@ -10,4 +11,16 @@ const dashboardController = new DashboardController(dashboardView, productServic
 
 window.fetchAndRenderProducts = (page = 1) => dashboardController.loadProducts(page);
 
-document.addEventListener('DOMContentLoaded', () => dashboardController.loadProducts(currentPage));
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('product-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', (event) => {
+            clearTimeout(searchDebounceTimeout);
+            searchDebounceTimeout = window.setTimeout(() => {
+                dashboardController.setSearchTerm(event.target.value);
+            }, 250);
+        });
+    }
+
+    dashboardController.loadProducts(currentPage);
+});

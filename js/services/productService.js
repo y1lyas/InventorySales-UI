@@ -4,8 +4,8 @@ class ProductService {
         this.pageSize = pageSize;
     }
 
-    async getProductsForPage(page = 1) {
-        const data = await this.api.getAll(page, this.pageSize);
+    async getProductsForPage(page = 1, search = '') {
+        const data = await this.api.getAll(page, this.pageSize, search);
         const products = this.extractProducts(data);
         const pagination = this.calculatePaginationInfo(data, products.length, page);
         
