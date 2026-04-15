@@ -62,6 +62,38 @@ class DashboardView {
         this.showEmptyState();
     }
 
+    showSuccess(message) {
+    this.showAlert(message, 'success');
+    }
+
+    showActionError(message) {
+        console.error('DashboardView error:', message);
+        this.showAlert(message, 'danger');
+    }
+
+    showAlert(message, type = 'success') {
+
+    const alertContainer = document.getElementById('alert-container') || this.tableView;
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show shadow-sm border-0`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i>
+            <div>${message}</div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    alertContainer.prepend(alertDiv);
+
+    setTimeout(() => {
+        const bsAlert = new bootstrap.Alert(alertDiv);
+        bsAlert.close();
+    }, 3000);
+}
+
     renderProducts(products) {
         if (!this.tableBody) return;
 
@@ -91,7 +123,9 @@ class DashboardView {
                     <td class="text-muted small">${formattedDate}</td>
                     <td class="text-end px-4">
                         <button class="text-decoration-none btn btn-sm btn-link text-primary p-0 me-2">Edit</button>
-                        <button class="text-decoration-none btn btn-sm btn-link text-danger p-0">Delete</button>
+                        <button class="btn btn-sm btn-light text-danger shadow-sm border-0 btn-delete-action" onclick="deleteProduct('${p.id}')" title="Delete Product">
+                        <i class="bi bi-trash3-fill"></i>
+                       </button>                    
                     </td>
                 </tr>
             `;

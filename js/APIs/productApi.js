@@ -1,8 +1,8 @@
 const API_BASE_URL = 'https://localhost:7298/api';
 
 const ProductApi = {
-    async getAll(page = 1, size = 10, search = "") {
-        const url = `${API_BASE_URL}/products/GetAll?PageNumber=${page}&PageSize=${size}&SearchTerm=${encodeURIComponent(search)}`;
+    async getAll(page = 1, size = 10, search = "", isDeleted = false) {
+        const url = `${API_BASE_URL}/products/GetAll?&IsDeleted=${isDeleted}&PageNumber=${page}&PageSize=${size}&SearchTerm=${encodeURIComponent(search)}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch products');
         return await response.json();
@@ -14,7 +14,6 @@ const ProductApi = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(productData)
         });
-
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(errorText || 'Failed to create product');
@@ -23,11 +22,12 @@ const ProductApi = {
         return await response.json();
     },
 
-    async GetAllCategories() {
-        const response = await fetch(`${API_BASE_URL}/categories/GetAll`);
-        if (!response.ok) throw new Error('Failed to load categories');
-        return await response.json();
-    }
+    async delete(productId){
+        const response = await fetch(`${API_BASE_URL}/products/delete/${productId}`, {
+            method: 'DELETE'
+        });
+        if (!response.ok) throw new Error('Failed to delete product');
+    },
 };
 
 window.ProductApi = ProductApi;

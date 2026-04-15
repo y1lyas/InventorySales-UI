@@ -30,17 +30,26 @@
                 <h2 class="fw-bold mb-1">Products</h2>
                 <p class="text-muted small">Manage your inventory levels and catalog.</p>
             </div>
-            <button class="btn btn-dark px-4 py-2 fw-semibold" id="btnAddProduct" onclick="showAddProductModal()">
-                <i class="bi bi-plus-lg me-2"></i>Add Product
-            </button>
         </header>
 
-        <div class="mb-4" style="max-width: 420px;">
+           <div class="mb-3 bg-light p-1 rounded border">
+            <div class="row">
+                <div class="col-3">
             <div class="input-group">
                 <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input type="search" id="product-search" class="form-control" placeholder="Search products by name or SKU">
+                <input type="search" id="product-search" class="form-control py-2" placeholder="Search products by name or SKU">
             </div>
-        </div>
+            </div>
+            <div class="col-9 btn-group" role="group">
+            <button class="btn btn-light text-dark text-opacity-80 border border-bottom-0 px-4 py-2" id="btnAddProduct" onclick="showAddProductModal()">
+                <i class="bi text-success bi-plus-lg me-2"></i>Add Product
+                </button>
+             <button type="button" class="btn btn-light text-dark text-opacity-80 border border-bottom-0 px-4 py-2">Middle</button>
+             <button type="button" class="btn btn-light text-dark text-opacity-80 border border-bottom-0 px-4 py-2">Right</button>
+            <button type="button" class="btn btn-light text-dark text-opacity-80 border border-bottom-0 px-4 py-2" id="btnToggleTrash"><i class="bi bi-recycle text-danger me-1"></i> Recycle Bin</button>
+                </div>
+            </div>
+        </div>        
 
         <div id="table-view" class="card card-custom overflow-hidden d-none">
             <table class="table mb-0 align-middle">
@@ -58,16 +67,19 @@
                     </tbody>
             </table>
             <div id="pagination-container" class="d-none border-top px-4 py-3">
+                
                 <nav aria-label="Product pagination">
                     <ul class="pagination justify-content-end mb-0" id="pagination"></ul>
                 </nav>
             </div>
         </div>
+        <!-- SPINNER  -->
         <div id="loading-state" class="text-center py-5">
             <div class="spinner-border mb-4 p-4" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
+        <!-- no product  -->
         <div id="empty-state" class="text-center d-none">
             <div class="mb-4 text-muted">
                 <i class="bi bi-box-seam" style="font-size: 4rem;"></i>
@@ -78,6 +90,7 @@
         </div>
     </main>
 </div>
+<!-- addProduct modal -->
 <div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
@@ -118,15 +131,70 @@
             </div>
         </div>
     </div>
+
+
+
+
+</div>
+<!-- Recycle Bin Modal -->
+ <div class="modal fade" id="recycleBinModal" tabindex="-1" aria-labelledby="recycleBinModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="recycleBinModalLabel">
+                    <i class="bi bi-clock-history me-2"></i>Product History
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="trash-search" class="form-control" placeholder="Search in removed products...">
+                </div>
+                <div id="trash-table-container" class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Created Date</th>
+                                <th>Deleted Date</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recycle-bin-table-body">
+                            </tbody>
+                    </table>
+                </div>
+                <div id="trash-pagination-container" class="d-none border-top pt-3">
+                    <nav aria-label="Removed product pagination">
+                        <ul class="pagination justify-content-end mb-0" id="trash-pagination"></ul>
+                    </nav>
+                </div>
+                <!-- Recycle Bin Spinner -->
+<div id="trash-spinner" class="text-center py-5">
+            <div class="spinner-border mb-4 p-4" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
 </div>
 
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/api.js"></script>
+    <script src="/js/APIs/productApi.js"></script>
+    <script src="/js/APIs/categoryApi.js"></script>
     <script src="/js/services/productService.js"></script>
     <script src="/js/views/dashboardView.js"></script>
     <script src="/js/views/addProductView.js"></script>
+    <script src="/js/views/removedProductsView.js"></script>
     <script src="/js/controllers/dashboardController.js"></script>
-    <script src="/js/controllers/addProductController.js"></script>
+    <script src="/js/controllers/Product/Add/addProductController.js"></script>
+    <script src="/js/controllers/Product/Delete/deleteProductController.js"></script>
     <script src="/js/dashboard/dashboard.js"></script>
     <script src="/js/modals/addProductModal.js"></script>
 </body>

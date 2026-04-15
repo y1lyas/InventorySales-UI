@@ -1,11 +1,17 @@
 class ProductService {
-    constructor(api, pageSize = 10) {
-        this.api = api;
+    constructor(productApi,categoryApi, pageSize = 10) {
+        this.productApi = productApi;
+        this.categoryApi = categoryApi;
         this.pageSize = pageSize;
     }
 
-    async getProductsForPage(page = 1, search = '') {
-        const data = await this.api.getAll(page, this.pageSize, search);
+    async getProductsForPage(page = 1, searchTerm = '', { isDeleted } = {}) {
+      const data = await this.productApi.getAll(
+        page, 
+        this.pageSize, 
+        searchTerm, 
+        isDeleted === true
+    );
         const products = this.extractProducts(data);
         const pagination = this.calculatePaginationInfo(data, products.length, page);
         
@@ -13,11 +19,15 @@ class ProductService {
     }
 
     async getCategories() {
-        return await this.api.GetAllCategories();
+        return await this.categoryApi.GetAllCategories();
     }
 
     async createProduct(productData) {
-        return await this.api.create(productData);
+        return await this.productApi.create(productData);
+    }
+
+    async deleteProduct(id) {
+        return await this.productApi.delete(id);
     }
 
     validateProductFormData(formData) {
