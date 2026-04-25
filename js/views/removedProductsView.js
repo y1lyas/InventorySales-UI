@@ -16,9 +16,10 @@ show() {
         }
     }
 showLoading() {
-       if (this.tableContainer) this.tableContainer.classList.add('d-none');
-    if (this.tableBody) this.tableBody.innerHTML = ''; 
-    if (this.spinner) this.spinner.classList.remove('d-none');
+        if (this.tableContainer) this.tableContainer.classList.add('d-none');
+        if (this.paginationContainer) this.paginationContainer.classList.add('d-none');
+        if (this.tableBody) this.tableBody.innerHTML = ''; 
+        if (this.spinner) this.spinner.classList.remove('d-none');
     }
 
     showTable() {
@@ -27,22 +28,43 @@ showLoading() {
             this.tableContainer.classList.remove('d-none');
         }
     }
-  renderEmptyState({ title, text, isSearch }) {
-        this.showTable(); 
+
+    showEmptyState({ icon= 'bi-trash3', title = 'Bin is empty', text = 'There are no removed products to display.', buttonText = null, buttonAction = null, isSearch = false } = {}) {
+        if (this.spinner) this.spinner.classList.add('d-none');
+        if (this.paginationContainer) this.paginationContainer.classList.add('d-none');
+        if (this.tableContainer) this.tableContainer.classList.remove('d-none');
         if (!this.tableBody) return;
 
         this.tableBody.innerHTML = `
             <tr>
                 <td colspan="5" class="text-center py-5">
                     <div class="mb-3">
-                        <i class="bi ${isSearch ? 'bi-search' : 'bi-exclamation-octagon'} fs-1 text-muted opacity-50"></i>
+                        <i class="bi ${isSearch ? 'bi-search' : icon} fs-1 text-muted opacity-50"></i>
                     </div>
                     <h5 class="fw-bold">${title}</h5>
                     <p class="text-muted">${text}</p>
+                    ${buttonText ? `<button type="button" class="btn btn-sm btn-primary mt-3" id="trash-empty-state-button">${buttonText}</button>` : ''}
                 </td>
             </tr>`;
+
+        if (buttonText && buttonAction) {
+            const button = document.getElementById('trash-empty-state-button');
+            if (button) {
+                button.onclick = buttonAction;
+            }
+        }
     }
-renderProducts(products, options = {}) {
+
+    showError(message) {
+        console.error('RemovedProductsView error:', message);
+        this.showEmptyState({
+            title: 'Error loading products',
+            text: message || 'Unable to load removed products. Please try again.',
+            icon: 'bi-exclamation-octagon',
+        });
+    }
+
+    renderProducts(products, options = {}) {
         if (this.tableBody) this.tableBody.innerHTML = '';
         
         this.renderDeletedProducts(products);

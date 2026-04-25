@@ -1,4 +1,6 @@
 
+const API_BASE_URL = 'https://localhost:7298/api';
+
 const CategoryApi = {
     async GetAllCategories() {
         const response = await fetch(`${API_BASE_URL}/categories/GetAll`);
@@ -8,3 +10,4 @@ const CategoryApi = {
 };
 
 window.CategoryApi = CategoryApi;
+export default CategoryApi;

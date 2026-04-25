@@ -1,4 +1,4 @@
-class ProductService {
+export default class ProductService {
     constructor(productApi,categoryApi, pageSize = 10) {
         this.productApi = productApi;
         this.categoryApi = categoryApi;

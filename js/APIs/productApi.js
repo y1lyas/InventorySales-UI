@@ -31,3 +31,4 @@ const ProductApi = {
 };
 
 window.ProductApi = ProductApi;
+export default ProductApi;

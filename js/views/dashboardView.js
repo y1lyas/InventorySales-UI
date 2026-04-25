@@ -1,4 +1,4 @@
-class DashboardView {
+export default class DashboardView {
     constructor() {
         this.tableBody = document.getElementById('product-list-body');
         this.paginationContainer = document.getElementById('pagination-container');
@@ -9,52 +9,59 @@ class DashboardView {
         this.emptyStateText = document.getElementById('empty-state-text');
         this.emptyStateButton = document.getElementById('empty-state-button');
         this.loadingState = document.getElementById('loading-state');
+        this.bindEvents();
     }
 
-    showLoading() {
-        this.loadingState?.classList.remove('d-none');
-        this.tableView?.classList.add('d-none');
-        this.emptyState?.classList.add('d-none');
-        this.paginationContainer?.classList.add('d-none');
+    bindEvents() {
+    // Delete button click
+    this.tableBody?.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-delete-action');
+        if (btn) {
+            const id = btn.dataset.id;
+            this.onDeleteClick?.(id);
+        }
+    });
+    
+    // Empty state button click
+    this.emptyStateButton?.addEventListener('click', () => {
+        if (window.showAddProductModal) {
+            window.showAddProductModal();
+        }
+    });
+}
+
+    // Render methods for dashboardRenderer
+    renderLoading() {
+        if (this.loadingState) {
+            this.loadingState.classList.remove('d-none');
+            this.loadingState.style.display = 'block';
+        }
+        if (this.tableView) this.tableView.classList.add('d-none');
+        if (this.emptyState) this.emptyState.classList.add('d-none');
     }
 
-    showTable() {
-        this.loadingState?.classList.add('d-none');
-        this.tableView?.classList.remove('d-none');
-        this.emptyState?.classList.add('d-none');
+    renderError(message = 'An error occurred') {
+        if (this.loadingState) this.loadingState.classList.add('d-none');
+        if (this.tableView) this.tableView.classList.add('d-none');
+        if (this.emptyState) {
+            this.emptyState.classList.remove('d-none');
+            this.emptyState.style.display = 'block';
+            if (this.emptyStateTitle) this.emptyStateTitle.textContent = 'Error';
+            if (this.emptyStateText) this.emptyStateText.textContent = message;
+        }
     }
 
-    showEmptyState(options = {}) {
-        const {
-            title = 'Your inventory is empty',
-            text = 'Start by adding your first product to manage your stock levels.',
-            buttonText = 'Create Your First Product',
-            buttonAction = window.showAddProductModal
-        } = options;
-
-        if (this.emptyStateTitle) {
-            this.emptyStateTitle.textContent = title;
+    renderEmpty() {
+        if (this.loadingState) this.loadingState.classList.add('d-none');
+        if (this.tableView) this.tableView.classList.add('d-none');
+        if (this.emptyState) {
+            this.emptyState.classList.remove('d-none');
+            this.emptyState.style.display = 'block';
         }
+    }
 
-        if (this.emptyStateText) {
-            this.emptyStateText.textContent = text;
-        }
-
-        if (this.emptyStateButton) {
-            if (buttonText && buttonAction) {
-                this.emptyStateButton.classList.remove('d-none');
-                this.emptyStateButton.textContent = buttonText;
-                this.emptyStateButton.onclick = buttonAction;
-            } else {
-                this.emptyStateButton.classList.add('d-none');
-                this.emptyStateButton.onclick = null;
-            }
-        }
-
-        this.loadingState?.classList.add('d-none');
-        this.tableView?.classList.add('d-none');
-        this.emptyState?.classList.remove('d-none');
-        this.paginationContainer?.classList.add('d-none');
+    showEmptyState() {
+        this.renderEmpty();
     }
 
     showError(message) {
@@ -94,43 +101,42 @@ class DashboardView {
     }, 3000);
 }
 
-    renderProducts(products) {
-        if (!this.tableBody) return;
-
-        this.tableBody.innerHTML = products.map(p => {
-            const priceAmount = p.unitPrice ?? p.price ?? 0;
-            const currency = p.currency ?? 'TL';
-            const skuValue = p.skUnit ?? p.sku ?? 'N/A';
-            const dateRaw = p.createdAt || p.CreatedAt || p.created_date;
-            const formattedDate = dateRaw
-                ? new Date(dateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
-                : 'N/A';
-            const stockQuantity = p.currentStock ?? p.stock ?? 0;
-
-            return `
-                <tr>
-                    <td class="px-4">
-                        <div class="fw-medium">${p.name ?? 'Unnamed Product'}</div>
-                        <div class="text-muted small">${skuValue}</div>
-                    </td>
-                    <td><span class="badge bg-light text-dark border">${p.categoryName || p.category?.name || 'General'}</span></td>
-                    <td>
-                        <span class="${stockQuantity < 10 ? 'text-danger fw-bold' : ''}">
-                            ${stockQuantity} units
-                        </span>
-                    </td>
-                    <td>${currency} ${Number(priceAmount).toFixed(2)}</td>
-                    <td class="text-muted small">${formattedDate}</td>
-                    <td class="text-end px-4">
-                        <button class="text-decoration-none btn btn-sm btn-link text-primary p-0 me-2">Edit</button>
-                        <button class="btn btn-sm btn-light text-danger shadow-sm border-0 btn-delete-action" onclick="deleteProduct('${p.id}')" title="Delete Product">
-                        <i class="bi bi-trash3-fill"></i>
-                       </button>                    
-                    </td>
-                </tr>
-            `;
-        }).join('');
+  renderTable(products) {
+    if (!this.tableBody) {
+      return;
     }
+    
+    if (!products || products.length === 0) {
+      this.renderEmpty();
+      return;
+    }
+
+    this.tableBody.innerHTML = products.map(p => `
+        <tr>
+            <td class="px-4"> <div class="fw-medium">${p.name ?? 'Unnamed Product'}</div>
+                        <div class="text-muted small">${p.skUnit || '-'}</div></td>
+            <td><span class="badge bg-light text-dark border">${p.categoryName || p.category?.name || 'General'}</span></td>
+            <td>${p.currentStock || 0}</td>
+            <td>${p.unitPrice || 0} ${p.currency || 'TL'}</td>
+            <td>${p.createdAt ? new Date(p.createdAt).toLocaleDateString('tr-TR') : '-'}</td>
+            <td class="text-end px-4">
+                <button data-id="${p.id}" class="btn btn-sm btn-outline-danger btn-delete-action" title="Delete">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    // Show table, hide others
+    if (this.tableView) {
+        this.tableView.classList.remove('d-none');
+        this.tableView.style.display = 'table';
+    }
+    if (this.emptyState) this.emptyState.classList.add('d-none');
+    if (this.loadingState) this.loadingState.classList.add('d-none');
+    
+    console.log('DashboardView: table rendered successfully');
+}
 
     renderPagination({ currentPage, totalPages }, onPageChange) {
         if (!this.pagination || !this.paginationContainer) return;

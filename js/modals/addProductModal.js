@@ -4,9 +4,9 @@ const addProductController = new AddProductController(addProductView, window.pro
 
 addProductController.onProductCreated = () => fetchAndRenderProducts();
 
-window.showAddProductModal = async () => {
-    await addProductController.loadCategories();
-    addProductView.show();
+window.showAddProductModal = () => {
+    addProductView.showWithLoading();
+    addProductController.loadCategories();
 };
 
 document.addEventListener('DOMContentLoaded', () => {
