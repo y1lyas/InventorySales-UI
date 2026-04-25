@@ -16,6 +16,20 @@ class AddProductView {
         this.modalInstance.show();
     }
 
+    showWithLoading() {
+        if (!this.modalInstance) {
+            this.modalInstance = new bootstrap.Modal(this.modal);
+        }
+        this.modalInstance.show();
+        this.showCategoryLoading();
+    }
+
+    showCategoryLoading() {
+        if (!this.categorySelect) return;
+        this.categorySelect.innerHTML = '<option value="">Loading categories...</option>';
+        this.categorySelect.disabled = true;
+    }
+
     hide() {
         if (this.modalInstance) {
             this.modalInstance.hide();
@@ -25,6 +39,7 @@ class AddProductView {
     renderCategories(categories) {
         if (!this.categorySelect) return;
 
+        this.categorySelect.disabled = false;
         this.categorySelect.innerHTML = '<option value="">None (Optional)</option>';
         categories.forEach(cat => {
             const option = document.createElement('option');
@@ -57,6 +72,9 @@ class AddProductView {
     }
 
     showCategoryError(message = 'Failed to load categories') {
+        if (!this.categorySelect) return;
+        this.categorySelect.disabled = false;
+        this.categorySelect.innerHTML = '<option value="">Failed to load categories</option>';
         console.error(message);
     }
 

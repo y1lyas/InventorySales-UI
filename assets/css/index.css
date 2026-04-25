@@ -24,6 +24,8 @@
 
         
         .btn-primary:hover { background-color: #0052cc; transform: translateY(-1px); }
+        .btn-outline:hover { background-color: #d1d1d1; transform: translateY(-1px); border-color: #c0c0c0; }
+
         
         .btn-outline {
             color: var(--deep-black);

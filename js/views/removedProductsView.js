@@ -1,6 +1,6 @@
 class RemovedProductsView {
     constructor() {
-this.modalElement = document.getElementById('recycleBinModal');
+        this.modalElement = document.getElementById('recycleBinModal');
         this.modal = new bootstrap.Modal(this.modalElement);        
         this.tableBody = document.getElementById('recycle-bin-table-body');
         this.spinner = document.getElementById('trash-spinner');
@@ -16,9 +16,10 @@ show() {
         }
     }
 showLoading() {
-       if (this.tableContainer) this.tableContainer.classList.add('d-none');
-    if (this.tableBody) this.tableBody.innerHTML = ''; 
-    if (this.spinner) this.spinner.classList.remove('d-none');
+        if (this.tableContainer) this.tableContainer.classList.add('d-none');
+        if (this.paginationContainer) this.paginationContainer.classList.add('d-none');
+        if (this.tableBody) this.tableBody.innerHTML = ''; 
+        if (this.spinner) this.spinner.classList.remove('d-none');
     }
 
     showTable() {
@@ -27,8 +28,11 @@ showLoading() {
             this.tableContainer.classList.remove('d-none');
         }
     }
-  renderEmptyState({ title, text, isSearch }) {
-        this.showTable(); 
+
+    showEmptyState({ title = 'Bin is empty', text = 'There are no removed products to display.', buttonText = null, buttonAction = null, isSearch = false } = {}) {
+        if (this.spinner) this.spinner.classList.add('d-none');
+        if (this.paginationContainer) this.paginationContainer.classList.add('d-none');
+        if (this.tableContainer) this.tableContainer.classList.remove('d-none');
         if (!this.tableBody) return;
 
         this.tableBody.innerHTML = `
@@ -39,10 +43,27 @@ showLoading() {
                     </div>
                     <h5 class="fw-bold">${title}</h5>
                     <p class="text-muted">${text}</p>
+                    ${buttonText ? `<button type="button" class="btn btn-sm btn-primary mt-3" id="trash-empty-state-button">${buttonText}</button>` : ''}
                 </td>
             </tr>`;
+
+        if (buttonText && buttonAction) {
+            const button = document.getElementById('trash-empty-state-button');
+            if (button) {
+                button.onclick = buttonAction;
+            }
+        }
     }
-renderProducts(products, options = {}) {
+
+    showError(message) {
+        console.error('RemovedProductsView error:', message);
+        this.showEmptyState({
+            title: 'Error loading products',
+            text: message || 'Unable to load removed products. Please try again.',
+        });
+    }
+
+    renderProducts(products, options = {}) {
         if (this.tableBody) this.tableBody.innerHTML = '';
         
         this.renderDeletedProducts(products);

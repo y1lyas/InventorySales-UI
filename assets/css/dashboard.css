@@ -18,7 +18,7 @@
         
         #empty-state {padding: 5rem 2rem; border: 2px dashed var(--border-color); border-radius: 16px; }
 
-        #loading-state {
+      #loading-state, #trash-spinner {
             min-height: 55vh;
             display: flex;
             flex-direction: column;
@@ -26,9 +26,4 @@
             justify-content: center;
             padding: 2rem 0;
             color: #b1b4b9;
-        }
-        #trash-spinner{
-            min-height: 55vh;
-            padding: 2rem 0;
-            color: #b1b4b9;
-        }
+            }
