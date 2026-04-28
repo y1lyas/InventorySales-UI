@@ -1,8 +1,11 @@
 const API_BASE_URL = 'https://localhost:7298/api';
 
 const ProductApi = {
-    async getAll(page = 1, size = 10, search = "", isDeleted = false) {
-        const url = `${API_BASE_URL}/products/GetAll?&IsDeleted=${isDeleted}&PageNumber=${page}&PageSize=${size}&SearchTerm=${encodeURIComponent(search)}`;
+    async getAll(page = 1, size = 10, search = "", isDeleted = false, categoryId = null) {
+        let url = `${API_BASE_URL}/products/GetAll?PageNumber=${page}&PageSize=${size}&IsDeleted=${isDeleted}&SearchTerm=${encodeURIComponent(search)}`;
+        if (categoryId !== null && categoryId !== undefined) {
+            url += `&categoryId=${categoryId}`;
+        }
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch products');
         return await response.json();

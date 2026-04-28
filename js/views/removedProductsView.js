@@ -7,7 +7,33 @@ class RemovedProductsView {
         this.tableContainer = document.getElementById('trash-table-container');
         this.paginationContainer = document.getElementById('trash-pagination-container');
         this.pagination = document.getElementById('trash-pagination');
+
+        // Event delegation for table actions
+        this.handleRemovedTableActions();
     }
+
+    handleRemovedTableActions() {
+        document.addEventListener('click', (e) => {
+            const restoreBtn = e.target.closest('.btn-restore-action');
+            if (restoreBtn) {
+                const row = restoreBtn.closest('tr');
+                const productId = row?.dataset.productId;
+                if (productId && typeof window.restoreProduct === 'function') {
+                    window.restoreProduct(productId);
+                }
+            }
+
+            const permanentDeleteBtn = e.target.closest('.btn-permanent-delete-action');
+            if (permanentDeleteBtn) {
+                const row = permanentDeleteBtn.closest('tr');
+                const productId = row?.dataset.productId;
+                if (productId && typeof window.permanentlyDelete === 'function') {
+                    window.permanentlyDelete(productId);
+                }
+            }
+        });
+    }
+
 show() {
         if (this.modal) {
             this.modal.show();
@@ -79,14 +105,14 @@ renderDeletedProducts(products) {
             const dateRaw = p.deletedAt || p.DeletedAt || p.deleted_date;
             const createdDateRaw = p.createdAt || p.CreatedAt || p.created_date;
             const formattedDate = dateRaw
-                ? new Date(dateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
+                ? new Date(dateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                 : 'N/A';
             const formattedCreatedDate = createdDateRaw
-                ? new Date(createdDateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
+                ? new Date(createdDateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                 : 'N/A';
 
             return `
-                <tr>
+                <tr data-product-id="${p.id}">
                     <td class="px-4">
                         <div class="fw-medium">${p.name ?? 'Unnamed Product'}</div>
                         <div class="text-muted small">${skuValue}</div>
@@ -95,10 +121,10 @@ renderDeletedProducts(products) {
                     <td class="text-muted small">${formattedCreatedDate}</td>
                     <td class="text-muted small">${formattedDate}</td>
                     <td class="text-end px-4">
-                        <button class="btn btn-sm btn-light text-success border-0 shadow-sm me-2" onclick="restoreProduct('${p.id}')">
+                        <button class="btn btn-sm btn-light text-success border-0 shadow-sm me-2 btn-restore-action" title="Restore Product">
                             <i class="bi bi-arrow-counterclockwise"></i>
                         </button>
-                        <button class="btn btn-sm btn-light text-danger border-0 shadow-sm" onclick="permanentlyDelete('${p.id}')">
+                        <button class="btn btn-sm btn-light text-danger border-0 shadow-sm btn-permanent-delete-action" title="Permanently Delete">
                             <i class="bi bi-x-circle-fill"></i>
                         </button>
                     </td>

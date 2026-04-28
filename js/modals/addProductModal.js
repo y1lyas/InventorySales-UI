@@ -1,6 +1,6 @@
 
 const addProductView = new AddProductView();
-const addProductController = new AddProductController(addProductView, window.productService);
+const addProductController = new ProductController(addProductView, window.productService, window.categoryService);
 
 addProductController.onProductCreated = () => fetchAndRenderProducts();
 

@@ -9,6 +9,30 @@ class DashboardView {
         this.emptyStateText = document.getElementById('empty-state-text');
         this.emptyStateButton = document.getElementById('empty-state-button');
         this.loadingState = document.getElementById('loading-state');
+
+        this.handleDashboardActions();
+    }
+
+    handleDashboardActions() {
+        document.addEventListener('click', (e) => {
+            const deleteBtn = e.target.closest('.btn-delete-action');
+            if (deleteBtn) {
+                const row = deleteBtn.closest('tr');
+                const productId = row?.dataset.productId;
+                if (productId && typeof window.deleteProduct === 'function') {
+                    window.deleteProduct(productId);
+                }
+            }
+
+            const editBtn = e.target.closest('.btn-edit-action');
+            if (editBtn) {
+                const row = editBtn.closest('tr');
+                const productId = row?.dataset.productId;
+                if (productId && typeof window.editProduct === 'function') {
+                    window.editProduct(productId);
+                }
+            }
+        });
     }
 
     showLoading() {
@@ -103,12 +127,12 @@ class DashboardView {
             const skuValue = p.skUnit ?? p.sku ?? 'N/A';
             const dateRaw = p.createdAt || p.CreatedAt || p.created_date;
             const formattedDate = dateRaw
-                ? new Date(dateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
+                ? new Date(dateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' , hour: '2-digit', minute: '2-digit' })
                 : 'N/A';
             const stockQuantity = p.currentStock ?? p.stock ?? 0;
 
             return `
-                <tr>
+                <tr data-product-id="${p.id}">
                     <td class="px-4">
                         <div class="fw-medium">${p.name ?? 'Unnamed Product'}</div>
                         <div class="text-muted small">${skuValue}</div>
@@ -122,8 +146,10 @@ class DashboardView {
                     <td>${currency} ${Number(priceAmount).toFixed(2)}</td>
                     <td class="text-muted small">${formattedDate}</td>
                     <td class="text-end px-4">
-                        <button class="text-decoration-none btn btn-sm btn-link text-primary p-0 me-2">Edit</button>
-                        <button class="btn btn-sm btn-light text-danger shadow-sm border-0 btn-delete-action" onclick="deleteProduct('${p.id}')" title="Delete Product">
+                        <button class="btn btn-sm btn-light text-primary shadow-sm border-0 btn-edit-action" title="Edit Product">
+                        <i class="bi bi-pencil-fill"></i>
+                        </button>
+                        <button class="btn btn-sm btn-light text-danger shadow-sm border-0 btn-delete-action" title="Delete Product">
                         <i class="bi bi-trash3-fill"></i>
                        </button>                    
                     </td>

@@ -19,6 +19,7 @@ class DashboardController {
         this.service = service;
         this.isTrashMode = isTrashMode;
         this.searchTerm = '';
+        this.categoryId = null;
     }
 
       get #modeConfig() {
@@ -37,7 +38,7 @@ class DashboardController {
             const { products, pagination } = await this.service.getProductsForPage(
                 page,
                 this.searchTerm,
-                { isDeleted: this.isTrashMode ? true : undefined }
+                { isDeleted: this.isTrashMode ? true : undefined, categoryId: this.categoryId }
             );
 
             if (!products.length) {
@@ -80,6 +81,11 @@ class DashboardController {
 
     async setSearchTerm(searchTerm) {
         this.searchTerm = String(searchTerm || '').trim();
+        await this.loadProducts(1);
+    }
+
+    async setCategoryId(categoryId) {
+        this.categoryId = categoryId || null;
         await this.loadProducts(1);
     }
 }

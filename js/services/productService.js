@@ -1,25 +1,21 @@
 class ProductService {
-    constructor(productApi,categoryApi, pageSize = 10) {
+    constructor(productApi, pageSize = 10) {
         this.productApi = productApi;
-        this.categoryApi = categoryApi;
         this.pageSize = pageSize;
     }
 
-    async getProductsForPage(page = 1, searchTerm = '', { isDeleted } = {}) {
+    async getProductsForPage(page = 1, searchTerm = '', { isDeleted, categoryId } = {}) {
       const data = await this.productApi.getAll(
         page, 
         this.pageSize, 
         searchTerm, 
-        isDeleted === true
+        isDeleted === true,
+        categoryId
     );
         const products = this.extractProducts(data);
         const pagination = this.calculatePaginationInfo(data, products.length, page);
         
         return { products, pagination };
-    }
-
-    async getCategories() {
-        return await this.categoryApi.GetAllCategories();
     }
 
     async createProduct(productData) {
@@ -100,5 +96,3 @@ class ProductService {
         return { currentPage: currentPageValue, pageSize: size, totalItems, totalPages };
     }
 }
-
-window.ProductService = ProductService;

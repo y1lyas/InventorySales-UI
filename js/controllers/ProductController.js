@@ -1,12 +1,86 @@
-class DeleteProductController {
-    constructor(view, service) {
-        this.service = service;
+// filepath: js/controllers/ProductController.js
+class ProductController {
+    // =====================================================
+    // CONSTRUCTOR
+    // =====================================================
+    constructor(view, productService, categoryService) {
         this.view = view;
+        this.productService = productService;
+        this.categoryService = categoryService;
+     
+        // Callbacks
+        this.onProductCreated = null;
         this.onProductDeleted = null;
+        
+        // Delete specific
         this.toastRootId = 'delete-confirm-toast-root';
         this.isConfirming = false;
     }
 
+    // =====================================================
+    // INITIALIZATION
+    // =====================================================
+    async initialize() {
+        try {
+            await this.loadCategories();
+            this.setupFormHandler();
+        } catch (error) {
+            console.error('ProductController initialize error:', error);
+        }
+    }
+
+    // =====================================================
+    // ADD OPERATIONS
+    // =====================================================
+    async loadCategories() {
+        try {
+            const categories = await this.categoryService.getCategories();
+            this.view.renderCategories(categories);
+        } catch (error) {
+            console.error('ProductController loadCategories error:', error);
+            this.view.showCategoryError(error.message || 'Failed to load categories');
+        }
+    }
+
+    setupFormHandler() {
+        this.view.onFormSubmit(() => this.handleFormSubmit());
+    }
+
+    async handleFormSubmit() {
+        const formData = this.view.getFormData();
+
+        const validation = this.productService.validateProductFormData(formData);
+        if (!validation.valid) {
+            this.view.showError(validation.error);
+            return;
+        }
+
+        const productData = this.productService.buildProductPayload(formData, validation.price);
+
+        try {
+            console.log('Sending product data:', productData);
+            await this.productService.createProduct(productData);
+
+            this.view.resetForm();
+            this.view.hide();
+            this.view.showSuccess('Product added successfully!');
+
+            if (typeof this.onProductCreated === 'function') {
+                await this.onProductCreated();
+            }
+        } catch (error) {
+            console.error('ProductController handleFormSubmit error:', error);
+            this.view.showError(error.message || 'Failed to create product');
+        }
+    }
+
+    showModal() {
+        this.view.show();
+    }
+
+    // =====================================================
+    // DELETE OPERATIONS
+    // =====================================================
     async handleDelete(productId) {
         if (!productId) return;
 
@@ -19,7 +93,7 @@ class DeleteProductController {
         if (!confirmed) return;
 
         try {
-            await this.service.deleteProduct(productId);
+            await this.productService.deleteProduct(productId);
             this.view.showSuccess('Product deleted successfully!');
 
             if (typeof this.onProductDeleted === 'function') {
@@ -83,17 +157,14 @@ class DeleteProductController {
             root = document.createElement('div');
             root.id = this.toastRootId;
             root.style.position = 'fixed';
-            root.style.right = '1rem';
-            root.style.bottom = '1rem';
-            root.style.zIndex = '1080';
-            root.style.display = 'flex';
-            root.style.flexDirection = 'column';
-            root.style.alignItems = 'flex-end';
-            root.style.gap = '0.75rem';
+            root.style.top = '0';
+            root.style.right = '0';
+            root.style.zIndex = '9999';
+            root.style.padding = '1rem';
             document.body.appendChild(root);
         }
         return root;
     }
 }
 
-window.DeleteProductController = DeleteProductController;
+window.ProductController = ProductController;
