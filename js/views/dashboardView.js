@@ -1,4 +1,4 @@
-class DashboardView {
+export class DashboardView {
     constructor() {
         this.tableBody = document.getElementById('product-list-body');
         this.paginationContainer = document.getElementById('pagination-container');
@@ -9,30 +9,6 @@ class DashboardView {
         this.emptyStateText = document.getElementById('empty-state-text');
         this.emptyStateButton = document.getElementById('empty-state-button');
         this.loadingState = document.getElementById('loading-state');
-
-        this.handleDashboardActions();
-    }
-
-    handleDashboardActions() {
-        document.addEventListener('click', (e) => {
-            const deleteBtn = e.target.closest('.btn-delete-action');
-            if (deleteBtn) {
-                const row = deleteBtn.closest('tr');
-                const productId = row?.dataset.productId;
-                if (productId && typeof window.deleteProduct === 'function') {
-                    window.deleteProduct(productId);
-                }
-            }
-
-            const editBtn = e.target.closest('.btn-edit-action');
-            if (editBtn) {
-                const row = editBtn.closest('tr');
-                const productId = row?.dataset.productId;
-                if (productId && typeof window.editProduct === 'function') {
-                    window.editProduct(productId);
-                }
-            }
-        });
     }
 
     showLoading() {
@@ -53,7 +29,7 @@ class DashboardView {
             title = 'Your inventory is empty',
             text = 'Start by adding your first product to manage your stock levels.',
             buttonText = 'Create Your First Product',
-            buttonAction = window.showAddProductModal
+            buttonAction = null
         } = options;
 
         if (this.emptyStateTitle) {
@@ -96,27 +72,26 @@ class DashboardView {
     }
 
     showAlert(message, type = 'success') {
+        const alertContainer = document.getElementById('alert-container') || this.tableView;
+        const alertDiv = document.createElement('div');
 
-    const alertContainer = document.getElementById('alert-container') || this.tableView;
-    
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show shadow-sm border-0`;
-    alertDiv.role = 'alert';
-    alertDiv.innerHTML = `
-        <div class="d-flex align-items-center">
-            <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i>
-            <div>${message}</div>
-        </div>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    `;
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show shadow-sm border-0`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            <div class="d-flex align-items-center">
+                <i class="bi ${type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill'} me-2"></i>
+                <div>${message}</div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
 
-    alertContainer.prepend(alertDiv);
+        alertContainer.prepend(alertDiv);
 
-    setTimeout(() => {
-        const bsAlert = new bootstrap.Alert(alertDiv);
-        bsAlert.close();
-    }, 3000);
-}
+        setTimeout(() => {
+            const bsAlert = new bootstrap.Alert(alertDiv);
+            bsAlert.close();
+        }, 3000);
+    }
 
     renderProducts(products) {
         if (!this.tableBody) return;
@@ -217,5 +192,3 @@ class DashboardView {
         this.pagination.appendChild(createPageItem(currentPage + 1, 'Next', currentPage >= totalPages));
     }
 }
-
-window.DashboardView = DashboardView;

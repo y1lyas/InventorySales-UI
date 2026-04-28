@@ -1,29 +1,33 @@
-class ProductService {
-    constructor(productApi, pageSize = 10) {
+export class ProductService {
+    constructor(productApi, pageSize) {
         this.productApi = productApi;
-        this.pageSize = pageSize;
+        this.pageSize = pageSize || 10;
     }
 
-    async getProductsForPage(page = 1, searchTerm = '', { isDeleted, categoryId } = {}) {
-      const data = await this.productApi.getAll(
-        page, 
-        this.pageSize, 
-        searchTerm, 
-        isDeleted === true,
-        categoryId
-    );
-        const products = this.extractProducts(data);
-        const pagination = this.calculatePaginationInfo(data, products.length, page);
-        
-        return { products, pagination };
+    async getAllProducts({ isDeleted = false, categoryId = '' } = {}) {
+        const allProducts = [];
+        let page = 1;
+        let totalPages = 1;
+
+        do {
+            const data = await this.productApi.getAll(page, 100, '', isDeleted, categoryId);
+            const products = this.extractProducts(data);
+            const pagination = this.calculatePaginationInfo(data, products.length, page, 100);
+
+            allProducts.push(...products);
+            totalPages = pagination.totalPages;
+            page += 1;
+        } while (page <= totalPages);
+
+        return allProducts;
     }
 
     async createProduct(productData) {
         return await this.productApi.create(productData);
     }
 
-    async deleteProduct(id) {
-        return await this.productApi.delete(id);
+    async deleteProduct(productId) {
+        return await this.productApi.delete(productId);
     }
 
     validateProductFormData(formData) {
@@ -40,12 +44,9 @@ class ProductService {
             return { valid: false, error: 'Please enter a product price greater than 0' };
         }
 
-        return { valid: true, price };
+        return { valid: true, price: price };
     }
 
-    /**
-     * Normalize form data into API product format
-     */
     buildProductPayload(formData, price) {
         const selectedCategoryValue = formData.categoryValue?.trim() || '';
         const resolvedCategoryId = selectedCategoryValue && selectedCategoryValue !== 'undefined' && selectedCategoryValue !== 'null'
@@ -57,14 +58,61 @@ class ProductService {
             categoryId: resolvedCategoryId,
             sku: formData.sku,
             unitPrice: price,
-            price,
-            currency: "TL"
+            price: price,
+            currency: 'TL'
         };
     }
 
-    /**
-     * Extract products array from API response (handles multiple response formats)
-     */
+    filterProducts(products, { searchTerm = '', categoryId = '' } = {}) {
+        const normalizedSearch = String(searchTerm || '').trim().toLowerCase();
+        const normalizedCategoryId = String(categoryId || '');
+
+        return products.filter((product) => {
+            const matchesSearch = !normalizedSearch || `${product.name ?? ''} ${product.sku ?? product.skUnit ?? ''}`
+                .toLowerCase()
+                .includes(normalizedSearch);
+
+            const productCategoryId = String(product.categoryId ?? this.getCategoryId(product.category ?? product) ?? '');
+            const matchesCategory = !normalizedCategoryId || productCategoryId === normalizedCategoryId;
+
+            return matchesSearch && matchesCategory;
+        });
+    }
+
+    paginateProducts(products, currentPage) {
+        const totalPages = Math.max(1, Math.ceil(products.length / this.pageSize));
+        const safePage = Math.min(Math.max(currentPage, 1), totalPages);
+        const startIndex = (safePage - 1) * this.pageSize;
+
+        return {
+            products: products.slice(startIndex, startIndex + this.pageSize),
+            pagination: {
+                currentPage: safePage,
+                totalPages: totalPages
+            }
+        };
+    }
+
+    normalizeCreatedProduct(createdProduct, payload, categories) {
+        const product = createdProduct && typeof createdProduct === 'object' ? createdProduct : {};
+        const category = (categories || []).find((item) => String(this.getCategoryId(item)) === String(payload.categoryId ?? ''));
+
+        return {
+            ...product,
+            id: product.id ?? product.productId ?? Date.now(),
+            name: product.name ?? payload.name,
+            sku: product.sku ?? payload.sku,
+            skUnit: product.skUnit ?? payload.sku,
+            unitPrice: product.unitPrice ?? payload.unitPrice,
+            price: product.price ?? payload.price,
+            currency: product.currency ?? payload.currency ?? 'TL',
+            categoryId: product.categoryId ?? payload.categoryId ?? null,
+            categoryName: product.categoryName ?? category?.name ?? 'General',
+            currentStock: product.currentStock ?? product.stock ?? 0,
+            createdAt: product.createdAt ?? new Date().toISOString()
+        };
+    }
+
     extractProducts(data) {
         if (Array.isArray(data)) return data;
         if (Array.isArray(data.products)) return data.products;
@@ -74,10 +122,7 @@ class ProductService {
         return [];
     }
 
-    /**
-     * Calculate pagination info from API response
-     */
-    calculatePaginationInfo(data, currentCount, currentPage) {
+    calculatePaginationInfo(data, currentCount, currentPage, fallbackPageSize) {
         const totalItems = typeof data.totalCount === 'number'
             ? data.totalCount
             : typeof data.totalItems === 'number'
@@ -86,13 +131,18 @@ class ProductService {
                     ? data.total
                     : null;
 
-        const page = parseInt(data.page ?? data.currentPage ?? data.pageIndex ?? data.pageNumber ?? currentPage, 10);
-        const size = parseInt(data.pageSize ?? data.size ?? this.pageSize, 10) || this.pageSize;
-        const currentPageValue = Number.isFinite(page) && page > 0 ? page : currentPage;
+        const pageSize = parseInt(data.pageSize ?? data.size ?? fallbackPageSize ?? this.pageSize, 10) || this.pageSize;
         const totalPages = totalItems !== null
-            ? Math.max(1, Math.ceil(totalItems / size))
-            : Math.max(1, Math.ceil(currentCount / size));
+            ? Math.max(1, Math.ceil(totalItems / pageSize))
+            : Math.max(1, Math.ceil(currentCount / pageSize));
 
-        return { currentPage: currentPageValue, pageSize: size, totalItems, totalPages };
+        return {
+            currentPage: currentPage,
+            totalPages: totalPages
+        };
+    }
+
+    getCategoryId(item) {
+        return item?.id ?? item?.categoryId ?? item?.categoryGuid ?? item?._id ?? '';
     }
 }

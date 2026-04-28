@@ -1,93 +1,141 @@
-class DashboardController {
-    static #MODES = {
-        normal: {
-            emptyIcon:  'bi-box',
-            emptyTitle: 'No products',
-            emptyText:  'Add your first product to get started.',
-            emptyButtonText: null,
-        },
-        trash: {
-            emptyIcon:  'bi-trash',
-            emptyTitle: 'Bin is empty',
-            emptyText:  'You haven\'t removed any products yet.',
-            emptyButtonText: null,
-        },
-    };
-
-    constructor(view, service, { isTrashMode = false } = {}) {
+export class DashboardController {
+    constructor(view, productService, state, options) {
         this.view = view;
-        this.service = service;
-        this.isTrashMode = isTrashMode;
-        this.searchTerm = '';
-        this.categoryId = null;
+        this.productService = productService;
+        this.state = state;
+        this.isTrashMode = options?.isTrashMode === true;
     }
 
-      get #modeConfig() {
-        return DashboardController.#MODES[this.isTrashMode ? 'trash' : 'normal'];
-    }
+    async loadProducts(forceReload) {
+        const stateKey = this.isTrashMode ? 'deletedProducts' : 'products';
+        const loadingKey = this.isTrashMode ? 'isLoadingDeletedProducts' : 'isLoadingProducts';
+        const loadedKey = this.isTrashMode ? 'deletedProducts' : 'products';
 
-      async open() {
-        if (this.view.show) this.view.show();
-        await this.loadProducts(1);
-    }
+        if (!forceReload && this.state.loaded[loadedKey]) {
+            this.render();
+            return;
+        }
 
-  async loadProducts(page = 1) {
+        this.state.ui[loadingKey] = true;
         this.view.showLoading();
 
         try {
-            const { products, pagination } = await this.service.getProductsForPage(
-                page,
-                this.searchTerm,
-                { isDeleted: this.isTrashMode ? true : undefined, categoryId: this.categoryId }
-            );
+            const products = await this.productService.getAllProducts({ isDeleted: this.isTrashMode });
+            this.state[stateKey] = products;
+            this.state.loaded[loadedKey] = true;
+        } catch (error) {
+            this.view.showError(error.message || 'Unable to load products');
+        } finally {
+            this.state.ui[loadingKey] = false;
+            this.render();
+        }
+    }
 
-            if (!products.length) {
-                this.#handleEmptyState();
-                return;
+    render() {
+        if (this.state.ui[this.isTrashMode ? 'isLoadingDeletedProducts' : 'isLoadingProducts']) {
+            this.view.showLoading();
+            return;
+        }
+
+        const filteredProducts = this.getFilteredProducts();
+        const pageKey = this.isTrashMode ? 'trashPage' : 'dashboardPage';
+        const pageData = this.productService.paginateProducts(filteredProducts, this.state.ui[pageKey]);
+
+        this.state.ui[pageKey] = pageData.pagination.currentPage;
+
+        if (!filteredProducts.length) {
+            this.view.showEmptyState(this.getEmptyStateOptions());
+            return;
+        }
+
+        this.view.renderProducts(pageData.products);
+        this.view.renderPagination(pageData.pagination, (nextPage) => {
+            this.state.ui[pageKey] = nextPage;
+            this.render();
+        });
+        this.view.showTable();
+    }
+
+    setSearchTerm(searchTerm) {
+        if (this.isTrashMode) {
+            this.state.ui.trashSearchTerm = String(searchTerm || '').trim();
+            this.state.ui.trashPage = 1;
+        } else {
+            this.state.ui.searchTerm = String(searchTerm || '').trim();
+            this.state.ui.dashboardPage = 1;
+        }
+
+        this.render();
+    }
+
+    setCategoryId(categoryId) {
+        this.state.ui.categoryId = categoryId || '';
+        this.state.ui.dashboardPage = 1;
+        this.render();
+    }
+
+    getFilteredProducts() {
+        const source = this.isTrashMode ? this.state.deletedProducts : this.state.products;
+
+        return this.productService.filterProducts(source, {
+            searchTerm: this.isTrashMode ? this.state.ui.trashSearchTerm : this.state.ui.searchTerm,
+            categoryId: this.isTrashMode ? '' : this.state.ui.categoryId
+        });
+    }
+
+    getEmptyStateOptions() {
+        if (this.isTrashMode) {
+            if (this.state.ui.trashSearchTerm) {
+                return {
+                    title: 'No removed products found',
+                    text: 'No removed products match the current search.',
+                    buttonText: 'Clear search',
+                    buttonAction: () => this.clearSearch(),
+                    isSearch: true
+                };
             }
 
-            this.view.renderProducts(products, { isTrashMode: this.isTrashMode });
+            return {
+                title: 'Bin is empty',
+                text: 'There are no removed products to display.'
+            };
+        }
 
-            this.view.renderPagination(
-                pagination,
-                (nextPage) => this.loadProducts(nextPage)
-            );
+        if (this.state.ui.searchTerm || this.state.ui.categoryId) {
+            return {
+                title: 'No products found',
+                text: 'No products match the current search or category filter.',
+                buttonText: 'Clear filters',
+                buttonAction: () => this.clearFilters()
+            };
+        }
 
-            this.view.showTable();
+        return {
+            title: 'No products',
+            text: 'Add your first product to get started.'
+        };
+    }
 
-        } catch (error) {
-            console.error('DashboardController error:', error);
-            this.view.showError(error.message || 'Unable to load products');
+    clearSearch() {
+        this.setSearchTerm('');
+
+        const input = document.getElementById(this.isTrashMode ? 'trash-search' : 'product-search');
+        if (input) {
+            input.value = '';
         }
     }
 
-    #handleEmptyState() {
-        const config = this.#modeConfig;
+    clearFilters() {
+        this.state.ui.searchTerm = '';
+        this.state.ui.categoryId = '';
+        this.state.ui.dashboardPage = 1;
 
-        if (this.searchTerm) {
-            this.view.showEmptyState({
-                title: `No ${this.isTrashMode ? 'removed ' : ''}products found`,
-                text: `No products match "${this.searchTerm}". Try a different search term.`,
-                buttonText: 'Clear search',
-                buttonAction: () => this.setSearchTerm(''),
-            });
-        } else {
-            this.view.showEmptyState({
-                title: config.emptyTitle,
-                text:  config.emptyText,
-            });
-        }
-    }
+        const searchInput = document.getElementById('product-search');
+        const categoryFilter = document.getElementById('category-filter');
 
-    async setSearchTerm(searchTerm) {
-        this.searchTerm = String(searchTerm || '').trim();
-        await this.loadProducts(1);
-    }
+        if (searchInput) searchInput.value = '';
+        if (categoryFilter) categoryFilter.value = '';
 
-    async setCategoryId(categoryId) {
-        this.categoryId = categoryId || null;
-        await this.loadProducts(1);
+        this.render();
     }
 }
-
-window.DashboardController = DashboardController;

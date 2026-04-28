@@ -1,12 +1,9 @@
-class CategoryService {
+export class CategoryService {
     constructor(categoryApi) {
         this.categoryApi = categoryApi;
     }
 
     async getCategories() {
-        return await this.categoryApi.GetAllCategories();
+        return await this.categoryApi.getAll();
     }
 }
-
-window.CategoryService = CategoryService;
-

@@ -1,4 +1,4 @@
-class AddProductView {
+export class AddProductView {
     constructor() {
         this.form = document.getElementById('addProductForm');
         this.modal = document.getElementById('addProductModal');
@@ -89,5 +89,3 @@ class AddProductView {
         });
     }
 }
-
-window.AddProductView = AddProductView;

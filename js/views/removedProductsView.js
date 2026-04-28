@@ -1,50 +1,26 @@
-class RemovedProductsView {
+export class RemovedProductsView {
     constructor() {
         this.modalElement = document.getElementById('recycleBinModal');
-        this.modal = new bootstrap.Modal(this.modalElement);        
+        this.modal = new bootstrap.Modal(this.modalElement);
         this.tableBody = document.getElementById('recycle-bin-table-body');
         this.spinner = document.getElementById('trash-spinner');
         this.tableContainer = document.getElementById('trash-table-container');
         this.paginationContainer = document.getElementById('trash-pagination-container');
         this.pagination = document.getElementById('trash-pagination');
-
-        // Event delegation for table actions
-        this.handleRemovedTableActions();
     }
 
-    handleRemovedTableActions() {
-        document.addEventListener('click', (e) => {
-            const restoreBtn = e.target.closest('.btn-restore-action');
-            if (restoreBtn) {
-                const row = restoreBtn.closest('tr');
-                const productId = row?.dataset.productId;
-                if (productId && typeof window.restoreProduct === 'function') {
-                    window.restoreProduct(productId);
-                }
-            }
-
-            const permanentDeleteBtn = e.target.closest('.btn-permanent-delete-action');
-            if (permanentDeleteBtn) {
-                const row = permanentDeleteBtn.closest('tr');
-                const productId = row?.dataset.productId;
-                if (productId && typeof window.permanentlyDelete === 'function') {
-                    window.permanentlyDelete(productId);
-                }
-            }
-        });
-    }
-
-show() {
+    show() {
         if (this.modal) {
             this.modal.show();
         } else {
             console.error("Modal element found but bootstrap modal not initialized.");
         }
     }
-showLoading() {
+
+    showLoading() {
         if (this.tableContainer) this.tableContainer.classList.add('d-none');
         if (this.paginationContainer) this.paginationContainer.classList.add('d-none');
-        if (this.tableBody) this.tableBody.innerHTML = ''; 
+        if (this.tableBody) this.tableBody.innerHTML = '';
         if (this.spinner) this.spinner.classList.remove('d-none');
     }
 
@@ -89,15 +65,15 @@ showLoading() {
         });
     }
 
-    renderProducts(products, options = {}) {
+    renderProducts(products) {
         if (this.tableBody) this.tableBody.innerHTML = '';
-        
+
         this.renderDeletedProducts(products);
     }
 
-renderDeletedProducts(products) {
-        this.showTable(); 
-        
+    renderDeletedProducts(products) {
+        this.showTable();
+
         if (!this.tableBody) return;
 
         this.tableBody.innerHTML = products.map(p => {
@@ -132,7 +108,8 @@ renderDeletedProducts(products) {
             `;
         }).join('');
     }
-     renderPagination({ currentPage, totalPages }, onPageChange) {
+
+    renderPagination({ currentPage, totalPages }, onPageChange) {
         if (!this.pagination || !this.paginationContainer) return;
         if (totalPages <= 1) {
             this.paginationContainer.classList.add('d-none');
@@ -190,9 +167,4 @@ renderDeletedProducts(products) {
 
         this.pagination.appendChild(createPageItem(currentPage + 1, 'Next', currentPage >= totalPages));
     }
-
 }
-
-
-
-window.RemovedProductsView = RemovedProductsView;

@@ -1,78 +1,137 @@
+import { state } from './state/state.js';
+import { productApi } from './APIs/productApi.js';
+import { categoryApi } from './APIs/categoryApi.js';
+import { ProductService } from './services/productService.js';
+import { CategoryService } from './services/categoryService.js';
+import { DashboardController } from './controllers/dashboardController.js';
+import { ProductController } from './controllers/productController.js';
+import { TrashActionsController } from './controllers/trashActionsController.js';
+import { DashboardView } from './views/dashboardView.js';
+import { AddProductView } from './views/addProductView.js';
+import { RemovedProductsView } from './views/removedProductsView.js';
 
-let currentPage = 1;
-let searchDebounceTimeout;
-const pageSize = 10;
+let dashboardSearchDebounceId = null;
+let trashSearchDebounceId = null;
 
-const productService = new ProductService(ProductApi, pageSize);
-window.productService = productService;
-    
-const categoryService = new CategoryService(CategoryApi);
-window.categoryService = categoryService;
+document.addEventListener('DOMContentLoaded', initializeApp);
 
-const dashboardView = new DashboardView();
-const removedProductsView = new RemovedProductsView();
-const dashboardController = new DashboardController(dashboardView, productService);
-const trashController     = new DashboardController(removedProductsView, productService, { isTrashMode: true });
-const productController = new ProductController(dashboardView, productService, categoryService);
+function initializeApp() {
+    const dashboardView = new DashboardView();
+    const addProductView = new AddProductView();
+    const removedProductsView = new RemovedProductsView();
 
-document.getElementById('btnToggleTrash').addEventListener('click', () => {
-    trashController.open();
-});
+    const productService = new ProductService(productApi, state.ui.pageSize);
+    const categoryService = new CategoryService(categoryApi);
 
-document.addEventListener('click', (e) => {
-    const addProductBtn = e.target.closest('#btnAddProduct');
-    if (addProductBtn) {
-        window.showAddProductModal();
-    }
-});
+    const dashboardController = new DashboardController(dashboardView, productService, state, { isTrashMode: false });
+    const trashController = new DashboardController(removedProductsView, productService, state, { isTrashMode: true });
+    const productController = new ProductController(
+        addProductView,
+        productService,
+        categoryService,
+        state,
+        { feedbackView: dashboardView }
+    );
+    const trashActionsController = new TrashActionsController();
 
-productController.onProductDeleted = () => {
-    dashboardController.loadProducts(currentPage);
-};
+    productController.onProductCreated = function () {
+        dashboardController.render();
+    };
 
-window.fetchAndRenderProducts = (page = 1) => dashboardController.loadProducts(page);
+    productController.onProductDeleted = function () {
+        dashboardView.showSuccess('Product deleted successfully!');
+        dashboardController.render();
+        trashController.render();
+    };
 
-window.deleteProduct = (id) => {
-    productController.handleDelete(id);
-};
-document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.getElementById('product-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', (event) => {
-            clearTimeout(searchDebounceTimeout);
-            searchDebounceTimeout = window.setTimeout(() => {
-                dashboardController.setSearchTerm(event.target.value);
-            }, 250);
-        });
-    }
-    const trashSearchInput = document.getElementById('trash-search');
-    if (trashSearchInput) {
-        trashSearchInput.addEventListener('input', (event) => {
-            clearTimeout(searchDebounceTimeout);
-            searchDebounceTimeout = window.setTimeout(() => {
-                trashController.setSearchTerm(event.target.value);
-            }, 250);
-        });
-    }
+    bindEvents(dashboardController, trashController, productController);
+    renderCategoryFilter(state.categories, productService);
+    productController.loadCategories().then(function () {
+        renderCategoryFilter(state.categories, productService);
+    });
+    dashboardController.loadProducts(false);
+    bindTrashActionEvents(trashActionsController);
+}
 
-    // Category filter
+function bindEvents(dashboardController, trashController, productController) {
+    document.getElementById('btnAddProduct')?.addEventListener('click', function () {
+        productController.openCreateModal();
+    });
+
+    document.getElementById('btnToggleTrash')?.addEventListener('click', function () {
+        trashController.view.show();
+        trashController.loadProducts(false);
+    });
+
+    document.getElementById('product-search')?.addEventListener('input', function (event) {
+        clearTimeout(dashboardSearchDebounceId);
+        dashboardSearchDebounceId = window.setTimeout(function () {
+            dashboardController.setSearchTerm(event.target.value);
+        }, 250);
+    });
+
+    document.getElementById('trash-search')?.addEventListener('input', function (event) {
+        clearTimeout(trashSearchDebounceId);
+        trashSearchDebounceId = window.setTimeout(function () {
+            trashController.setSearchTerm(event.target.value);
+        }, 250);
+    });
+
+    document.getElementById('category-filter')?.addEventListener('change', function (event) {
+        dashboardController.setCategoryId(event.target.value);
+    });
+
+    document.getElementById('addProductForm')?.addEventListener('submit', function (event) {
+        event.preventDefault();
+        productController.handleFormSubmit();
+    });
+
+    document.addEventListener('click', function (event) {
+        const deleteButton = event.target.closest('.btn-delete-action');
+        if (deleteButton) {
+            const row = deleteButton.closest('tr');
+            const productId = row?.dataset.productId;
+            if (productId) {
+                productController.handleDelete(productId);
+            }
+        }
+    });
+}
+
+function renderCategoryFilter(categories, productService) {
     const categoryFilter = document.getElementById('category-filter');
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', (event) => {
-            const categoryId = event.target.value || null;
-            dashboardController.setCategoryId(categoryId);
-        });
-        
-        // Load categories for filter dropdown
-        categoryService.getCategories().then(categories => {
-            categories.forEach(cat => {
-                const option = document.createElement('option');
-                option.value = cat.id || cat.categoryId || cat.categoryGuid;
-                option.textContent = cat.name;
-                categoryFilter.appendChild(option);
-            });
-        }).catch(err => console.error('Failed to load categories for filter:', err));
+    if (!categoryFilter) {
+        return;
     }
 
-    dashboardController.loadProducts(currentPage);
-});
+    categoryFilter.innerHTML = '<option value="">All Categories</option>';
+
+    categories.forEach(function (category) {
+        const option = document.createElement('option');
+        option.value = productService.getCategoryId(category);
+        option.textContent = category.name ?? 'Unknown category';
+        categoryFilter.appendChild(option);
+    });
+}
+
+function bindTrashActionEvents(trashActionsController) {
+    document.addEventListener('click', function (event) {
+        const restoreButton = event.target.closest('.btn-restore-action');
+        if (restoreButton) {
+            const row = restoreButton.closest('tr');
+            const productId = row?.dataset.productId;
+            if (productId) {
+                trashActionsController.handleRestore(productId);
+            }
+        }
+
+        const permanentDeleteButton = event.target.closest('.btn-permanent-delete-action');
+        if (permanentDeleteButton) {
+            const row = permanentDeleteButton.closest('tr');
+            const productId = row?.dataset.productId;
+            if (productId) {
+                trashActionsController.handlePermanentDelete(productId);
+            }
+        }
+    });
+}
