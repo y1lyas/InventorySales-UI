@@ -77,11 +77,11 @@ export class RemovedProductsView {
         if (!this.tableBody) return;
 
         this.tableBody.innerHTML = products.map(p => {
-            const skuValue = p.skUnit ?? p.sku ?? 'N/A';
-            const dateRaw = p.deletedAt || p.DeletedAt || p.deleted_date;
-            const createdDateRaw = p.createdAt || p.CreatedAt || p.created_date;
-            const formattedDate = dateRaw
-                ? new Date(dateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+            const skuValue = p.skUnit || 'N/A';
+            const deletedDateRaw = p.deletedAt;
+            const createdDateRaw = p.createdAt;
+            const formattedDeletedDate = deletedDateRaw
+                ? new Date(deletedDateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
                 : 'N/A';
             const formattedCreatedDate = createdDateRaw
                 ? new Date(createdDateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -95,7 +95,7 @@ export class RemovedProductsView {
                     </td>
                     <td><span class="badge bg-light text-dark border">${p.categoryName || 'General'}</span></td>
                     <td class="text-muted small">${formattedCreatedDate}</td>
-                    <td class="text-muted small">${formattedDate}</td>
+                    <td class="text-muted small">${formattedDeletedDate}</td>
                     <td class="text-end px-4">
                         <button class="btn btn-sm btn-light text-success border-0 shadow-sm me-2 btn-restore-action" title="Restore Product">
                             <i class="bi bi-arrow-counterclockwise"></i>

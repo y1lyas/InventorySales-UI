@@ -59,7 +59,7 @@ export class ProductService {
             sku: formData.sku,
             unitPrice: price,
             price: price,
-            currency: 'TL'
+            // currency: simdilik currency api tarafinda varsayilan olarak TRY. 
         };
     }
 
@@ -105,7 +105,7 @@ export class ProductService {
             skUnit: product.skUnit ?? payload.sku,
             unitPrice: product.unitPrice ?? payload.unitPrice,
             price: product.price ?? payload.price,
-            currency: product.currency ?? payload.currency ?? 'TL',
+            currency: product.currency ?? payload.currency ?? 'TRY',
             categoryId: product.categoryId ?? payload.categoryId ?? null,
             categoryName: product.categoryName ?? category?.name ?? 'General',
             currentStock: product.currentStock ?? product.stock ?? 0,

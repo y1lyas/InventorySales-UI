@@ -1,5 +1,6 @@
 export class ProductController {
-    constructor(view, productService, categoryService, state, options) {
+
+    constructor(view, productService , categoryService, state, options) {
         this.view = view;
         this.productService = productService;
         this.categoryService = categoryService;

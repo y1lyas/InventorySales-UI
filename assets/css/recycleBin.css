@@ -1,0 +1,14 @@
+#recycleBinModal .modal-dialog {
+    height: 95vh;
+}
+
+#recycleBinModal .modal-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+#recycleBinModal .modal-body {
+    flex: 1;
+    overflow-y: auto;
+}

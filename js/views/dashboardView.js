@@ -97,19 +97,19 @@ export class DashboardView {
         if (!this.tableBody) return;
 
         this.tableBody.innerHTML = products.map(p => {
-            const priceAmount = p.unitPrice ?? p.price ?? 0;
-            const currency = p.currency ?? 'TL';
-            const skuValue = p.skUnit ?? p.sku ?? 'N/A';
-            const dateRaw = p.createdAt || p.CreatedAt || p.created_date;
+            const priceAmount = p.unitPrice || 0;
+            const currency = p.currency;
+            const skuValue = p.skUnit || 'N/A';
+            const dateRaw = p.createdAt;
             const formattedDate = dateRaw
                 ? new Date(dateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' , hour: '2-digit', minute: '2-digit' })
                 : 'N/A';
-            const stockQuantity = p.currentStock ?? p.stock ?? 0;
+            const stockQuantity = p.currentStock || 0;
 
             return `
                 <tr data-product-id="${p.id}">
                     <td class="px-4">
-                        <div class="fw-medium">${p.name ?? 'Unnamed Product'}</div>
+                        <div class="fw-medium">${p.name || 'Unnamed Product'}</div>
                         <div class="text-muted small">${skuValue}</div>
                     </td>
                     <td><span class="badge bg-light text-dark border">${p.categoryName || p.category?.name || 'General'}</span></td>
