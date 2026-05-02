@@ -32,12 +32,22 @@ export const productApi = {
     },
 
     async delete(productId) {
-        const response = await fetch(`${API_BASE_URL}/products/delete/${productId}`, {
+        const response = await fetch(`${API_BASE_URL}/products/delete?productId=${productId}`, {
             method: 'DELETE'
         });
 
         if (!response.ok) {
             throw new Error('Failed to delete product');
         }
+    },
+     async getStockMovement(productId) {
+        const response = await fetch(`${API_BASE_URL}/products/stock-movements?productId=${productId}`);
+   
+   const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error('Failed to fetch stock movements');
+        }
+
+        return await response.json();
     }
 };

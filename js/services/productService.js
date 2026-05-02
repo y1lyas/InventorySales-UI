@@ -59,7 +59,7 @@ export class ProductService {
             sku: formData.sku,
             unitPrice: price,
             price: price,
-            // currency: simdilik currency api tarafinda varsayilan olarak TRY. 
+            // currency: simdilik api tarafinda varsayilan olarak TRY. 
         };
     }
 
@@ -99,17 +99,17 @@ export class ProductService {
 
         return {
             ...product,
-            id: product.id ?? product.productId ?? Date.now(),
+            id: product.id ?? product.productId,
             name: product.name ?? payload.name,
             sku: product.sku ?? payload.sku,
             skUnit: product.skUnit ?? payload.sku,
             unitPrice: product.unitPrice ?? payload.unitPrice,
             price: product.price ?? payload.price,
-            currency: product.currency ?? payload.currency ?? 'TRY',
+            currency: product.currency ?? payload.currency,
             categoryId: product.categoryId ?? payload.categoryId ?? null,
             categoryName: product.categoryName ?? category?.name ?? 'General',
             currentStock: product.currentStock ?? product.stock ?? 0,
-            createdAt: product.createdAt ?? new Date().toISOString()
+            createdAt: product.createdAt
         };
     }
 

@@ -47,6 +47,7 @@ export class ProductController {
         try {
             const createdProduct = await this.productService.createProduct(payload);
             const normalizedProduct = this.productService.normalizeCreatedProduct(createdProduct, payload, this.state.categories);
+         
 
             this.state.products.unshift(normalizedProduct);
             this.state.ui.dashboardPage = 1;
