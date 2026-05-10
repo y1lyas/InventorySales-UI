@@ -3,87 +3,144 @@ import { productApi } from './APIs/productApi.js';
 import { categoryApi } from './APIs/categoryApi.js';
 import { ProductService } from './services/productService.js';
 import { CategoryService } from './services/categoryService.js';
+import { StockMovementService } from './services/stockMovementService.js';
+import { ProductListController } from './controllers/ProductListController.js';
+import { ProductController } from './controllers/ProductController.js';
 import { DashboardController } from './controllers/dashboardController.js';
-import { ProductController } from './controllers/productController.js';
-import { TrashActionsController } from './controllers/trashActionsController.js';
-import { DashboardView } from './views/dashboardView.js';
+import { ProductListView } from './views/productListView.js';
+import { StockMovementsView } from './views/stockMovementsView.js';
 import { AddProductView } from './views/addProductView.js';
 import { RemovedProductsView } from './views/removedProductsView.js';
+import { StockAdjustmentView } from './views/stockAdjustmentView.js';
 
-let dashboardSearchDebounceId = null;
+let productSearchDebounceId = null;
 let trashSearchDebounceId = null;
+let movementSearchDebounceId = null;
 
 document.addEventListener('DOMContentLoaded', initializeApp);
 
 function initializeApp() {
-    const dashboardView = new DashboardView();
-    const addProductView = new AddProductView();
-    const removedProductsView = new RemovedProductsView();
-
     const productService = new ProductService(productApi, state.ui.pageSize);
     const categoryService = new CategoryService(categoryApi);
+    const stockMovementService = new StockMovementService(productApi);
 
-    const dashboardController = new DashboardController(dashboardView, productService, state, { isTrashMode: false });
-    const trashController = new DashboardController(removedProductsView, productService, state, { isTrashMode: true });
+    if (document.getElementById('product-list-body')) {
+        initializeProductsPage(productService, categoryService);
+    }
+
+    if (document.getElementById('stock-movement-table-body')) {
+        initializeDashboardPage(productService, stockMovementService);
+    }
+}
+
+function initializeProductsPage(productService, categoryService) {
+    const productListView = new ProductListView();
+    const addProductView = new AddProductView();
+    const stockAdjustmentView = new StockAdjustmentView();
+    const removedProductsView = new RemovedProductsView();
+
     const productController = new ProductController(
         addProductView,
         productService,
         categoryService,
         state,
-        { feedbackView: dashboardView }
+        {
+            feedbackView: productListView,
+            stockAdjustmentView: stockAdjustmentView
+        }
     );
-    const trashActionsController = new TrashActionsController();
+    const productListController = new ProductListController(productListView, productService, state, {
+        onCreateProduct: () => productController.openCreateModal()
+    });
+    const deletedProductListController = new ProductListController(removedProductsView, productService, state, {
+        isDeletedList: true
+    });
 
     productController.onProductCreated = function () {
-        dashboardController.render();
+        productListController.render();
     };
 
     productController.onProductDeleted = function () {
-        dashboardView.showSuccess('Product deleted successfully!');
-        dashboardController.render();
-        trashController.render();
+        productListView.showSuccess('Product deleted successfully!');
+        productListController.render();
+        deletedProductListController.render();
     };
 
-    bindEvents(dashboardController, trashController, productController);
+    productController.onStockAdjusted = function () {
+        productListController.render();
+    };
+
+    bindProductPageEvents(productListController, deletedProductListController, productController);
     renderCategoryFilter(state.categories, productService);
     productController.loadCategories().then(function () {
         renderCategoryFilter(state.categories, productService);
     });
-    dashboardController.loadProducts(false);
-    bindTrashActionEvents(trashActionsController);
+    productListController.loadProducts(false);
+    bindTrashActionEvents(productController);
 }
 
-function bindEvents(dashboardController, trashController, productController) {
+function initializeDashboardPage(productService, stockMovementService) {
+    const dashboardView = new StockMovementsView();
+    const dashboardController = new DashboardController(dashboardView, productService, stockMovementService, state);
+
+    document.getElementById('dashboard-product-select')?.addEventListener('change', function (event) {
+        dashboardController.setProductFilter(event.target.value);
+    });
+
+    document.getElementById('dashboard-movement-type-select')?.addEventListener('change', function (event) {
+        dashboardController.setMovementTypeFilter(event.target.value);
+    });
+
+    document.getElementById('dashboard-movement-search')?.addEventListener('input', function (event) {
+        clearTimeout(movementSearchDebounceId);
+        movementSearchDebounceId = window.setTimeout(function () {
+            dashboardController.setSearchTerm(event.target.value);
+        }, 250);
+    });
+
+    dashboardController.initialize();
+}
+
+function bindProductPageEvents(productListController, deletedProductListController, productController) {
     document.getElementById('btnAddProduct')?.addEventListener('click', function () {
         productController.openCreateModal();
     });
 
+    document.getElementById('btnAdjustStock')?.addEventListener('click', function () {
+        productController.openAdjustStockModal();
+    });
+
     document.getElementById('btnToggleTrash')?.addEventListener('click', function () {
-        trashController.view.show();
-        trashController.loadProducts(false);
+        deletedProductListController.view.show();
+        deletedProductListController.loadProducts(false);
     });
 
     document.getElementById('product-search')?.addEventListener('input', function (event) {
-        clearTimeout(dashboardSearchDebounceId);
-        dashboardSearchDebounceId = window.setTimeout(function () {
-            dashboardController.setSearchTerm(event.target.value);
+        clearTimeout(productSearchDebounceId);
+        productSearchDebounceId = window.setTimeout(function () {
+            productListController.setSearchTerm(event.target.value);
         }, 250);
     });
 
     document.getElementById('trash-search')?.addEventListener('input', function (event) {
         clearTimeout(trashSearchDebounceId);
         trashSearchDebounceId = window.setTimeout(function () {
-            trashController.setSearchTerm(event.target.value);
+            deletedProductListController.setSearchTerm(event.target.value);
         }, 250);
     });
 
     document.getElementById('category-filter')?.addEventListener('change', function (event) {
-        dashboardController.setCategoryId(event.target.value);
+        productListController.setCategoryId(event.target.value);
     });
 
     document.getElementById('addProductForm')?.addEventListener('submit', function (event) {
         event.preventDefault();
         productController.handleFormSubmit();
+    });
+
+    document.getElementById('adjustStockForm')?.addEventListener('submit', function (event) {
+        event.preventDefault();
+        productController.handleStockAdjustmentSubmit();
     });
 
     document.addEventListener('click', function (event) {
@@ -114,14 +171,14 @@ function renderCategoryFilter(categories, productService) {
     });
 }
 
-function bindTrashActionEvents(trashActionsController) {
+function bindTrashActionEvents(productController) {
     document.addEventListener('click', function (event) {
         const restoreButton = event.target.closest('.btn-restore-action');
         if (restoreButton) {
             const row = restoreButton.closest('tr');
             const productId = row?.dataset.productId;
             if (productId) {
-                trashActionsController.handleRestore(productId);
+                productController.handleRestore(productId);
             }
         }
 
@@ -130,7 +187,7 @@ function bindTrashActionEvents(trashActionsController) {
             const row = permanentDeleteButton.closest('tr');
             const productId = row?.dataset.productId;
             if (productId) {
-                trashActionsController.handlePermanentDelete(productId);
+                productController.handlePermanentDelete(productId);
             }
         }
     });

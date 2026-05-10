@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - InventorySales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/recycleBin.css">
+    
+</head>
+<body>
+
+<div class="wrapper">
+    <aside class="sidebar d-flex flex-column">
+        <a href="/pages/" class="sidebar-brand fw-bold">
+            <span>InventorySales</span>
+            <i class="bi bi-house-door sidebar-brand-icon" aria-hidden="true"></i>
+        </a>
+        <nav class="nav flex-column sidebar-nav">
+            <a href="/pages/dashboard.html" class="nav-link"><i class="bi bi-grid-1x2 me-2"></i>Dashboard</a>
+            <a href="/pages/products.html" class="nav-link active"><i class="bi bi-box-seam me-2"></i>Products</a>
+            <a href="#" class="nav-link"><i class="bi bi-tags me-2"></i>Categories</a>
+            <a href="#" class="nav-link"><i class="bi bi-cart3 me-2"></i>Sales</a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1">Products</h2>
+                <p class="text-muted small">Manage your inventory levels and catalog.</p>
+            </div>
+        </header>
+
+        <!-- Search and Actions Bar -->
+        <div class="d-flex flex-wrap gap-3 align-items-center mb-4">
+            <!-- Search + Category Filter -->
+            <div class="d-flex flex-grow-1" style="min-width: 280px; max-width: 500px;">
+                <div class="input-group flex-grow-1">
+                    <span class="input-group-text bg-white border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="search" id="product-search" class="form-control border-start-0 ps-0" placeholder="Search products by name or SKU">
+                       <select class="form-select" id="category-filter" style="max-width: 160px;">
+                    <option value="">All Categories</option>
+                </select>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="btn-group" role="group">
+                <button class="btn btn-white bg-white border shadow-sm" id="btnAddProduct">
+                    <i class="bi bi-plus-lg text-success me-1"></i>Add Product
+                </button>
+                <button class="btn btn-white bg-white border shadow-sm" id="btnAdjustStock">
+                    <i class="bi bi-arrow-left-right text-primary me-2"></i>Adjust Stock
+                </button>
+                <button class="btn btn-white bg-white border shadow-sm" id="btnToggleTrash">
+                    <i class="bi bi-recycle text-danger me-2"></i>Recycle Bin
+                </button>
+            </div>
+        </div>   
+             
+<!-- products table -->
+        <div id="table-view" class="card card-custom overflow-hidden d-none">
+            <table class="table mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-3">Product Name</th>
+                        <th>Category</th>
+                        <th>Stock</th>
+                        <th>Price</th>
+                        <th>Created Date</th>
+                        <th class="text-end px-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="product-list-body">
+                    </tbody>
+            </table>
+            <div id="pagination-container" class="d-none border-top px-4 py-3">
+                
+                <nav aria-label="Product pagination">
+                    <ul class="pagination justify-content-center mb-0" id="pagination"></ul>
+                </nav>
+            </div>
+        </div>
+        <!-- SPINNER  -->
+        <div id="loading-state" class="text-center py-5 spinner">
+            <div class="spinner-border mb-4 p-4" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <!-- no product  -->
+        <div id="empty-state" class="text-center d-none">
+            <div class="mb-4 text-muted">
+                <i class="bi bi-box-seam" style="font-size: 4rem;"></i>
+            </div>
+            <h4 id="empty-state-title" class="fw-bold">Your inventory is empty</h4>
+            <p id="empty-state-text" class="text-muted mb-4">Start by adding your first product to manage your stock levels.</p>
+            <button id="empty-state-button" class="btn btn-primary px-4 py-2" type="button">Create Your First Product</button>
+        </div>
+    </main>
+</div>
+<!-- Adjust Stock Modal -->
+<div class="modal fade" id="adjustStockModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Adjust Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="adjustStockForm">
+                    <div class="mb-3">
+                        <label for="adjustStockProduct" class="form-label">Product</label>
+                        <select class="form-select" id="adjustStockProduct" required>
+                            <option value="">Select product</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="adjustStockAction" class="form-label">Action</label>
+                            <select class="form-select" id="adjustStockAction">
+                                <option value="increase">Increase</option>
+                                <option value="decrease">Decrease</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="adjustStockQuantity" class="form-label">Quantity</label>
+                            <input type="number" min="1" step="1" class="form-control" id="adjustStockQuantity" required>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary py-2 px-4">Save Adjustment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- addProduct modal -->
+<div class="modal fade" id="addProductModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Add New Product</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="addProductForm">
+                    <div class="mb-3">
+                        <label class="form-label">Product Name</label>
+                        <input type="text" class="form-control" id="pName" required placeholder="e.g. iPhone 15 Pro">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" id="pCategory">
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">SKU</label>
+                            <input type="text" class="form-control" id="pSku" required placeholder="SKU-123">
+                        </div>
+                    </div>
+                    <div class="row align-items-end">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Price</label>
+                            <div class="input-group">
+                                <span class="input-group-text">TRY</span>
+                                <input type="number" min="0.01" step="0.01" class="form-control" id="pPrice" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3 d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary py-2 px-4">Save Product</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Recycle Bin Modal -->
+ <div class="modal fade" id="recycleBinModal" tabindex="-1" aria-labelledby="recycleBinModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title" id="recycleBinModalLabel">
+                    <i class="bi bi-clock-history me-2"></i>Product History
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <input type="text" id="trash-search" class="form-control" placeholder="Search in removed products...">
+                </div>
+                <div id="trash-table-container" class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Product Name</th>
+                                <th>Category</th>
+                                <th>Created Date</th>
+                                <th>Deleted Date</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recycle-bin-table-body">
+                            </tbody>
+                    </table>
+                </div>
+                <!-- Recycle Bin Spinner -->
+                <div id="trash-spinner" class="text-center py-5 spinner">
+                    <div class="spinner-border mb-4 p-4" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-end align-items-center">
+                <div id="trash-pagination-container" class="d-none">
+                    <nav aria-label="Removed product pagination">
+                        <ul class="pagination justify-content-center mb-0" id="trash-pagination"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="../js/app.js"></script>
+</body>
+</html>

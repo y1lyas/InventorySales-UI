@@ -5,15 +5,29 @@ export const state = {
     loaded: {
         products: false,
         deletedProducts: false,
-        categories: false
+        categories: false,
+        dashboardProducts: false
+    },
+    dashboard: {
+        products: [],
+        productFilterId: '',
+        movementTypeFilter: '',
+        movementSearchTerm: '',
+        stockMovements: [],
+        movementsPage: 1,
+        movementsPageSize: 10,
+        movementsPagination: {
+            currentPage: 1,
+            totalPages: 1
+        }
     },
     ui: {
         pageSize: 10,
-        dashboardPage: 1,
+        productsPage: 1,
         trashPage: 1,
-        searchTerm: '',
+        productSearchTerm: '',
         trashSearchTerm: '',
-        categoryId: '',
+        productCategoryId: '',
         isLoadingProducts: false,
         isLoadingDeletedProducts: false
     }

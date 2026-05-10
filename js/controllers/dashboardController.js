@@ -1,141 +1,94 @@
 export class DashboardController {
-    constructor(view, productService, state, options) {
+    constructor(view, productService, stockMovementService, state) {
         this.view = view;
         this.productService = productService;
+        this.stockMovementService = stockMovementService;
         this.state = state;
-        this.isTrashMode = options?.isTrashMode === true;
+        this.stockMovementsRequestId = 0;
     }
 
-    async loadProducts(forceReload) {
-        const stateKey = this.isTrashMode ? 'deletedProducts' : 'products';
-        const loadingKey = this.isTrashMode ? 'isLoadingDeletedProducts' : 'isLoadingProducts';
-        const loadedKey = this.isTrashMode ? 'deletedProducts' : 'products';
+    async initialize() {
+        await this.loadProducts();
+        await this.loadStockMovements();
+    }
 
-        if (!forceReload && this.state.loaded[loadedKey]) {
-            this.render();
+    async loadProducts() {
+        if (this.state.loaded.dashboardProducts) {
+            this.view.renderProductOptions(this.state.dashboard.products);
             return;
         }
 
-        this.state.ui[loadingKey] = true;
+        try {
+            this.state.dashboard.products = await this.productService.getAllProducts({ isDeleted: false });
+            this.state.loaded.dashboardProducts = true;
+            this.view.renderProductOptions(this.state.dashboard.products);
+        } catch (error) {
+            this.view.renderProductOptions([]);
+            console.error(error);
+        }
+    }
+
+    async loadStockMovements() {
+        const requestId = ++this.stockMovementsRequestId;
+        const requestOptions = {
+            page: this.state.dashboard.movementsPage,
+            size: this.state.dashboard.movementsPageSize,
+            search: this.state.dashboard.movementSearchTerm,
+            productId: this.state.dashboard.productFilterId,
+            movementType: this.state.dashboard.movementTypeFilter
+        };
+
         this.view.showLoading();
 
         try {
-            const products = await this.productService.getAllProducts({ isDeleted: this.isTrashMode });
-            this.state[stateKey] = products;
-            this.state.loaded[loadedKey] = true;
+            const movements = await this.stockMovementService.getAllStockMovements(requestOptions);
+
+            if (requestId !== this.stockMovementsRequestId) {
+                return;
+            }
+
+            if (!movements.movements.length && this.state.dashboard.movementsPage > 1) {
+                this.state.dashboard.movementsPage = 1;
+                await this.loadStockMovements();
+                return;
+            }
+
+            this.state.dashboard.stockMovements = movements.movements;
+            this.state.dashboard.movementsPagination = movements.pagination;
+            this.state.dashboard.movementsPage = movements.pagination.currentPage;
+
+            this.view.renderMovements(movements.movements);
+            this.view.renderPagination(movements.pagination, (nextPage) => {
+                this.state.dashboard.movementsPage = nextPage;
+                this.loadStockMovements();
+            });
         } catch (error) {
-            this.view.showError(error.message || 'Unable to load products');
-        } finally {
-            this.state.ui[loadingKey] = false;
-            this.render();
+            if (requestId !== this.stockMovementsRequestId) {
+                return;
+            }
+
+            this.state.dashboard.stockMovements = [];
+            this.view.showError(error.message || 'Unable to load stock movements');
         }
     }
 
-    render() {
-        if (this.state.ui[this.isTrashMode ? 'isLoadingDeletedProducts' : 'isLoadingProducts']) {
-            this.view.showLoading();
-            return;
-        }
-
-        const filteredProducts = this.getFilteredProducts();
-        const pageKey = this.isTrashMode ? 'trashPage' : 'dashboardPage';
-        const pageData = this.productService.paginateProducts(filteredProducts, this.state.ui[pageKey]);
-
-        this.state.ui[pageKey] = pageData.pagination.currentPage;
-
-        if (!filteredProducts.length) {
-            this.view.showEmptyState(this.getEmptyStateOptions());
-            return;
-        }
-
-        this.view.renderProducts(pageData.products);
-        this.view.renderPagination(pageData.pagination, (nextPage) => {
-            this.state.ui[pageKey] = nextPage;
-            this.render();
-        });
-        this.view.showTable();
+    setProductFilter(productId) {
+        this.state.dashboard.productFilterId = productId || '';
+        this.state.dashboard.movementsPage = 1;
+        this.view.setSelectedProduct(this.state.dashboard.productFilterId);
+        this.loadStockMovements();
     }
 
     setSearchTerm(searchTerm) {
-        if (this.isTrashMode) {
-            this.state.ui.trashSearchTerm = String(searchTerm || '').trim();
-            this.state.ui.trashPage = 1;
-        } else {
-            this.state.ui.searchTerm = String(searchTerm || '').trim();
-            this.state.ui.dashboardPage = 1;
-        }
-
-        this.render();
+        this.state.dashboard.movementSearchTerm = String(searchTerm || '').trim();
+        this.state.dashboard.movementsPage = 1;
+        this.loadStockMovements();
     }
 
-    setCategoryId(categoryId) {
-        this.state.ui.categoryId = categoryId || '';
-        this.state.ui.dashboardPage = 1;
-        this.render();
-    }
-
-    getFilteredProducts() {
-        const source = this.isTrashMode ? this.state.deletedProducts : this.state.products;
-
-        return this.productService.filterProducts(source, {
-            searchTerm: this.isTrashMode ? this.state.ui.trashSearchTerm : this.state.ui.searchTerm,
-            categoryId: this.isTrashMode ? '' : this.state.ui.categoryId
-        });
-    }
-
-    getEmptyStateOptions() {
-        if (this.isTrashMode) {
-            if (this.state.ui.trashSearchTerm) {
-                return {
-                    title: 'No removed products found',
-                    text: 'No removed products match the current search.',
-                    buttonText: 'Clear search',
-                    buttonAction: () => this.clearSearch(),
-                    isSearch: true
-                };
-            }
-
-            return {
-                title: 'Bin is empty',
-                text: 'There are no removed products to display.'
-            };
-        }
-
-        if (this.state.ui.searchTerm || this.state.ui.categoryId) {
-            return {
-                title: 'No products found',
-                text: 'No products match the current search or category filter.',
-                buttonText: 'Clear filters',
-                buttonAction: () => this.clearFilters()
-            };
-        }
-
-        return {
-            title: 'No products',
-            text: 'Add your first product to get started.'
-        };
-    }
-
-    clearSearch() {
-        this.setSearchTerm('');
-
-        const input = document.getElementById(this.isTrashMode ? 'trash-search' : 'product-search');
-        if (input) {
-            input.value = '';
-        }
-    }
-
-    clearFilters() {
-        this.state.ui.searchTerm = '';
-        this.state.ui.categoryId = '';
-        this.state.ui.dashboardPage = 1;
-
-        const searchInput = document.getElementById('product-search');
-        const categoryFilter = document.getElementById('category-filter');
-
-        if (searchInput) searchInput.value = '';
-        if (categoryFilter) categoryFilter.value = '';
-
-        this.render();
+    setMovementTypeFilter(movementType) {
+        this.state.dashboard.movementTypeFilter = movementType ?? '';
+        this.state.dashboard.movementsPage = 1;
+        this.view.setSelectedMovementType(this.state.dashboard.movementTypeFilter);
+        this.loadStockMovements();
     }
 }

@@ -30,6 +30,31 @@ export class ProductService {
         return await this.productApi.delete(productId);
     }
 
+    async increaseStock(productId, quantity) {
+        return await this.productApi.increaseStock({ productId, quantity });
+    }
+
+    async decreaseStock(productId, quantity) {
+        return await this.productApi.decreaseStock({ productId, quantity });
+    }
+
+    validateStockAdjustmentFormData(formData) {
+        if (!formData.productId) {
+            return { valid: false, error: 'Please select a product' };
+        }
+
+        const quantity = parseInt(formData.quantityRaw, 10);
+        if (Number.isNaN(quantity) || quantity <= 0) {
+            return { valid: false, error: 'Please enter a quantity greater than 0' };
+        }
+
+        if (formData.action !== 'increase' && formData.action !== 'decrease') {
+            return { valid: false, error: 'Please choose increase or decrease' };
+        }
+
+        return { valid: true, quantity: quantity };
+    }
+
     validateProductFormData(formData) {
         if (!formData.name) {
             return { valid: false, error: 'Product name is required' };

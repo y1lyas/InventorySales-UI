@@ -1,3 +1,5 @@
+import { renderPagination } from '../utils/pagination.js';
+
 export class RemovedProductsView {
     constructor() {
         this.modalElement = document.getElementById('recycleBinModal');
@@ -77,6 +79,7 @@ export class RemovedProductsView {
         if (!this.tableBody) return;
 
         this.tableBody.innerHTML = products.map(p => {
+            const productId = p.id ?? p.productId;
             const skuValue = p.skUnit || 'N/A';
             const deletedDateRaw = p.deletedAt;
             const createdDateRaw = p.createdAt;
@@ -88,7 +91,7 @@ export class RemovedProductsView {
                 : 'N/A';
 
             return `
-                <tr data-product-id="${p.id}">
+                <tr data-product-id="${productId}">
                     <td class="px-4">
                         <div class="fw-medium">${p.name ?? 'Unnamed Product'}</div>
                         <div class="text-muted small">${skuValue}</div>
@@ -110,61 +113,6 @@ export class RemovedProductsView {
     }
 
     renderPagination({ currentPage, totalPages }, onPageChange) {
-        if (!this.pagination || !this.paginationContainer) return;
-        if (totalPages <= 1) {
-            this.paginationContainer.classList.add('d-none');
-            return;
-        }
-
-        this.paginationContainer.classList.remove('d-none');
-        this.pagination.innerHTML = '';
-
-        const createPageItem = (page, label, disabled = false, active = false) => {
-            const li = document.createElement('li');
-            li.className = `page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`;
-            const a = document.createElement('a');
-            a.className = 'page-link';
-            a.href = '#';
-            a.textContent = label;
-            a.addEventListener('click', (event) => {
-                event.preventDefault();
-                if (!disabled && !active && typeof onPageChange === 'function') {
-                    onPageChange(page);
-                }
-            });
-            li.appendChild(a);
-            return li;
-        };
-
-        this.pagination.appendChild(createPageItem(currentPage - 1, 'Previous', currentPage <= 1));
-
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, currentPage + 2);
-
-        if (startPage > 1) {
-            this.pagination.appendChild(createPageItem(1, '1'));
-            if (startPage > 2) {
-                const ellipsis = document.createElement('li');
-                ellipsis.className = 'page-item disabled';
-                ellipsis.innerHTML = '<span class="page-link">&hellip;</span>';
-                this.pagination.appendChild(ellipsis);
-            }
-        }
-
-        for (let page = startPage; page <= endPage; page += 1) {
-            this.pagination.appendChild(createPageItem(page, String(page), false, page === currentPage));
-        }
-
-        if (endPage < totalPages) {
-            if (endPage < totalPages - 1) {
-                const ellipsis = document.createElement('li');
-                ellipsis.className = 'page-item disabled';
-                ellipsis.innerHTML = '<span class="page-link">&hellip;</span>';
-                this.pagination.appendChild(ellipsis);
-            }
-            this.pagination.appendChild(createPageItem(totalPages, String(totalPages)));
-        }
-
-        this.pagination.appendChild(createPageItem(currentPage + 1, 'Next', currentPage >= totalPages));
+        renderPagination(this.pagination, this.paginationContainer, { currentPage, totalPages }, onPageChange);
     }
 }

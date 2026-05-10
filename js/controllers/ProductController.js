@@ -2,12 +2,14 @@ export class ProductController {
 
     constructor(view, productService , categoryService, state, options) {
         this.view = view;
+        this.stockAdjustmentView = options?.stockAdjustmentView || null;
         this.productService = productService;
         this.categoryService = categoryService;
         this.state = state;
         this.feedbackView = options?.feedbackView || view;
         this.onProductCreated = null;
         this.onProductDeleted = null;
+        this.onStockAdjusted = null;
         this.toastRootId = 'delete-confirm-toast-root';
         this.isConfirming = false;
         this.pendingConfirmation = null;
@@ -50,11 +52,12 @@ export class ProductController {
          
 
             this.state.products.unshift(normalizedProduct);
-            this.state.ui.dashboardPage = 1;
+            this.state.dashboard.products.unshift(normalizedProduct);
+            this.state.ui.productsPage = 1;
 
             this.view.resetForm();
             this.view.hide();
-            this.view.showSuccess('Product added successfully!');
+            this.feedbackView.showSuccess('Product added successfully!');
 
             if (typeof this.onProductCreated === 'function') {
                 this.onProductCreated();
@@ -87,13 +90,60 @@ export class ProductController {
         }
     }
 
+    openAdjustStockModal() {
+        this.stockAdjustmentView?.show(this.state.products);
+    }
+
+    async handleStockAdjustmentSubmit() {
+        if (!this.stockAdjustmentView) {
+            return;
+        }
+
+        const formData = this.stockAdjustmentView.getFormData();
+        const validation = this.productService.validateStockAdjustmentFormData(formData);
+
+        if (!validation.valid) {
+            this.stockAdjustmentView.showError(validation.error);
+            return;
+        }
+
+        try {
+            if (formData.action === 'increase') {
+                await this.productService.increaseStock(formData.productId, validation.quantity);
+                this.updateProductStock(formData.productId, validation.quantity);
+            } else {
+                await this.productService.decreaseStock(formData.productId, validation.quantity);
+                this.updateProductStock(formData.productId, -validation.quantity);
+            }
+
+            this.stockAdjustmentView.resetForm();
+            this.stockAdjustmentView.hide();
+            this.feedbackView.showSuccess('Stock adjusted successfully!');
+
+            if (typeof this.onStockAdjusted === 'function') {
+                this.onStockAdjusted();
+            }
+        } catch (error) {
+            this.stockAdjustmentView.showError(error.message || 'Failed to adjust stock');
+        }
+    }
+
+    handleRestore(productId) {
+        console.warn(`Restore is not implemented yet for product ${productId}.`);
+    }
+
+    handlePermanentDelete(productId) {
+        console.warn(`Permanent delete is not implemented yet for product ${productId}.`);
+    }
+
     moveProductToDeletedState(productId) {
-        const index = this.state.products.findIndex((product) => String(product.id) === String(productId));
+        const index = this.state.products.findIndex((product) => String(product.id ?? product.productId) === String(productId));
         if (index === -1) {
             return;
         }
 
         const removedProduct = this.state.products.splice(index, 1)[0];
+        this.state.dashboard.products = this.state.dashboard.products.filter((product) => String(product.id ?? product.productId) !== String(productId));
 
         if (this.state.loaded.deletedProducts) {
             this.state.deletedProducts.unshift({
@@ -104,7 +154,22 @@ export class ProductController {
     }
 
     findProductById(productId) {
-        return this.state.products.find((product) => String(product.id) === String(productId)) || null;
+        return this.state.products.find((product) => String(product.id ?? product.productId) === String(productId)) || null;
+    }
+
+    updateProductStock(productId, quantityChange) {
+        const updateStock = (product) => {
+            if (String(product.id ?? product.productId) !== String(productId)) {
+                return;
+            }
+
+            const currentStock = product.currentStock ?? product.stock ?? 0;
+            product.currentStock = Math.max(0, currentStock + quantityChange);
+            product.stock = product.currentStock;
+        };
+
+        this.state.products.forEach(updateStock);
+        this.state.dashboard.products.forEach(updateStock);
     }
 
     requestDeleteConfirmation(product) {
