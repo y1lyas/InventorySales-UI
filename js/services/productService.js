@@ -1,3 +1,5 @@
+import { extractCollection, extractPagination } from '../utils/apiResponse.js';
+
 export class ProductService {
     constructor(productApi, pageSize) {
         this.productApi = productApi;
@@ -38,6 +40,10 @@ export class ProductService {
         return await this.productApi.decreaseStock({ productId, quantity });
     }
 
+     async adjustPrice(productId, newPrice) {
+        return await this.productApi.adjustPrice({ productId, newPrice });
+    }
+
     validateStockAdjustmentFormData(formData) {
         if (!formData.productId) {
             return { valid: false, error: 'Please select a product' };
@@ -53,6 +59,20 @@ export class ProductService {
         }
 
         return { valid: true, quantity: quantity };
+    }
+      validatePriceAdjustmentFormData(formData) {
+        if (!formData.productId) {
+            return { valid: false, error: 'Please select a product' };
+        }
+
+          const newPrice = Number(
+        String(formData.newPrice || '').replace(',', '.')
+    );
+       if (!Number.isFinite(newPrice) || newPrice <= 0) {
+        return { valid: false, error: 'Please enter a product price greater than 0' };
+    }
+
+        return { valid: true, newPrice };
     }
 
     validateProductFormData(formData) {
@@ -139,32 +159,11 @@ export class ProductService {
     }
 
     extractProducts(data) {
-        if (Array.isArray(data)) return data;
-        if (Array.isArray(data.products)) return data.products;
-        if (Array.isArray(data.data)) return data.data;
-        if (Array.isArray(data.items)) return data.items;
-        if (Array.isArray(data.result)) return data.result;
-        return [];
+        return extractCollection(data, ['products']);
     }
 
     calculatePaginationInfo(data, currentCount, currentPage, fallbackPageSize) {
-        const totalItems = typeof data.totalCount === 'number'
-            ? data.totalCount
-            : typeof data.totalItems === 'number'
-                ? data.totalItems
-                : typeof data.total === 'number'
-                    ? data.total
-                    : null;
-
-        const pageSize = parseInt(data.pageSize ?? data.size ?? fallbackPageSize ?? this.pageSize, 10) || this.pageSize;
-        const totalPages = totalItems !== null
-            ? Math.max(1, Math.ceil(totalItems / pageSize))
-            : Math.max(1, Math.ceil(currentCount / pageSize));
-
-        return {
-            currentPage: currentPage,
-            totalPages: totalPages
-        };
+        return extractPagination(data, currentCount, currentPage, fallbackPageSize ?? this.pageSize);
     }
 
     getCategoryId(item) {

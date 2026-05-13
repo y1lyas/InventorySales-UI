@@ -7,11 +7,14 @@ import { StockMovementService } from './services/stockMovementService.js';
 import { ProductListController } from './controllers/ProductListController.js';
 import { ProductController } from './controllers/ProductController.js';
 import { DashboardController } from './controllers/dashboardController.js';
+import { CategoryController } from './controllers/categoryController.js';
 import { ProductListView } from './views/productListView.js';
 import { StockMovementsView } from './views/stockMovementsView.js';
 import { AddProductView } from './views/addProductView.js';
 import { RemovedProductsView } from './views/removedProductsView.js';
 import { StockAdjustmentView } from './views/stockAdjustmentView.js';
+import { PriceAdjustmentView } from './views/priceAdjustmentView.js';
+import { CategoryView } from './views/categoryView.js';
 
 let productSearchDebounceId = null;
 let trashSearchDebounceId = null;
@@ -31,12 +34,17 @@ function initializeApp() {
     if (document.getElementById('stock-movement-table-body')) {
         initializeDashboardPage(productService, stockMovementService);
     }
+
+    if (document.getElementById('category-list')) {
+        initializeCategoryPage(productService, categoryService);
+    }
 }
 
 function initializeProductsPage(productService, categoryService) {
     const productListView = new ProductListView();
     const addProductView = new AddProductView();
     const stockAdjustmentView = new StockAdjustmentView();
+    const priceAdjustmentView = new PriceAdjustmentView();
     const removedProductsView = new RemovedProductsView();
 
     const productController = new ProductController(
@@ -46,7 +54,8 @@ function initializeProductsPage(productService, categoryService) {
         state,
         {
             feedbackView: productListView,
-            stockAdjustmentView: stockAdjustmentView
+            stockAdjustmentView: stockAdjustmentView,
+            priceAdjustmentView: priceAdjustmentView
         }
     );
     const productListController = new ProductListController(productListView, productService, state, {
@@ -61,12 +70,15 @@ function initializeProductsPage(productService, categoryService) {
     };
 
     productController.onProductDeleted = function () {
-        productListView.showSuccess('Product deleted successfully!');
         productListController.render();
         deletedProductListController.render();
     };
 
     productController.onStockAdjusted = function () {
+        productListController.render();
+    };
+
+    productController.onPriceAdjusted = function () {
         productListController.render();
     };
 
@@ -101,6 +113,28 @@ function initializeDashboardPage(productService, stockMovementService) {
     dashboardController.initialize();
 }
 
+function initializeCategoryPage(productService, categoryService) {
+    const categoryView = new CategoryView();
+    const categoryController = new CategoryController(categoryView, categoryService, productService, state);
+
+    document.getElementById('createCategoryForm')?.addEventListener('submit', function (event) {
+        event.preventDefault();
+        categoryController.handleCreate();
+    });
+
+    document.getElementById('assignCategoryForm')?.addEventListener('submit', function (event) {
+        event.preventDefault();
+        categoryController.handleAssign();
+    });
+
+    document.getElementById('unassignCategoryForm')?.addEventListener('submit', function (event) {
+        event.preventDefault();
+        categoryController.handleUnassign();
+    });
+
+    categoryController.initialize();
+}
+
 function bindProductPageEvents(productListController, deletedProductListController, productController) {
     document.getElementById('btnAddProduct')?.addEventListener('click', function () {
         productController.openCreateModal();
@@ -108,6 +142,10 @@ function bindProductPageEvents(productListController, deletedProductListControll
 
     document.getElementById('btnAdjustStock')?.addEventListener('click', function () {
         productController.openAdjustStockModal();
+    });
+
+    document.getElementById('btnAdjustPrice')?.addEventListener('click', function () {
+        productController.openAdjustPriceModal();
     });
 
     document.getElementById('btnToggleTrash')?.addEventListener('click', function () {
@@ -143,7 +181,21 @@ function bindProductPageEvents(productListController, deletedProductListControll
         productController.handleStockAdjustmentSubmit();
     });
 
+    document.getElementById('adjustPriceForm')?.addEventListener('submit', function (event) {
+        event.preventDefault();
+        productController.handlePriceAdjustmentSubmit();
+    });
+
     document.addEventListener('click', function (event) {
+        const editButton = event.target.closest('.btn-edit-action');
+        if (editButton) {
+            const row = editButton.closest('tr');
+            const productId = row?.dataset.productId;
+            if (productId) {
+                productController.openAdjustPriceModal(productId);
+            }
+        }
+
         const deleteButton = event.target.closest('.btn-delete-action');
         if (deleteButton) {
             const row = deleteButton.closest('tr');

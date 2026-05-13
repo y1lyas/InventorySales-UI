@@ -30,9 +30,6 @@ export class SearchableSelect {
         this.inputGroup = document.createElement('div');
         this.inputGroup.className = 'searchable-select-control';
 
-        this.icon = document.createElement('i');
-        this.icon.className = 'bi bi-search searchable-select-icon';
-
         this.input = document.createElement('input');
         this.input.type = 'search';
         this.input.className = 'form-control searchable-select-input';
@@ -51,7 +48,7 @@ export class SearchableSelect {
         this.menu.className = 'searchable-select-menu d-none';
         this.menu.role = 'listbox';
 
-        this.inputGroup.append(this.icon, this.input, this.clearButton);
+        this.inputGroup.append(this.input, this.clearButton);
         this.root.append(this.inputGroup, this.menu);
         this.selectElement.insertAdjacentElement('afterend', this.root);
     }

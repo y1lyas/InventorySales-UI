@@ -16,11 +16,11 @@ export const productApi = {
         return await response.json();
     },
 
-    async create(productData) {
+    async create(payload) {
         const response = await fetch(`${API_BASE_URL}/products/create`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(productData)
+            body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
@@ -98,6 +98,18 @@ export const productApi = {
 
         if (!response.ok) {
             throw new Error('Failed to decrease stock');
+        }
+    },
+    async adjustPrice(payload) {
+        const response = await fetch(`${API_BASE_URL}/products/price`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+         if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Failed to adjust price');
         }
     }
 };

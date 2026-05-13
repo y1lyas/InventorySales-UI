@@ -6,7 +6,7 @@ export class ProductListController {
         this.isDeletedList = options?.isDeletedList === true;
         this.onCreateProduct = options?.onCreateProduct || null;
     }
-
+    
     async loadProducts(forceReload = false) {
         const stateKey = this.getStateKey();
         const loadingKey = this.getLoadingKey();
@@ -130,6 +130,7 @@ export class ProductListController {
 
         if (this.state.ui.productSearchTerm || this.state.ui.productCategoryId) {
             return {
+                icon: 'bi-search',
                 title: 'No products found',
                 text: 'No products match the current search or category filter.',
                 buttonText: 'Clear filters',

@@ -15,14 +15,14 @@ export const state = {
         movementSearchTerm: '',
         stockMovements: [],
         movementsPage: 1,
-        movementsPageSize: 10,
+        movementsPageSize: 12,
         movementsPagination: {
             currentPage: 1,
             totalPages: 1
         }
     },
     ui: {
-        pageSize: 10,
+        pageSize: 12,
         productsPage: 1,
         trashPage: 1,
         productSearchTerm: '',

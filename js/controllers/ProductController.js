@@ -1,8 +1,11 @@
+import { getProductId, getProductName, getProductSku } from '../utils/productDisplay.js';
+
 export class ProductController {
 
     constructor(view, productService , categoryService, state, options) {
         this.view = view;
         this.stockAdjustmentView = options?.stockAdjustmentView || null;
+        this.priceAdjustmentView = options?.priceAdjustmentView || null;
         this.productService = productService;
         this.categoryService = categoryService;
         this.state = state;
@@ -10,6 +13,7 @@ export class ProductController {
         this.onProductCreated = null;
         this.onProductDeleted = null;
         this.onStockAdjusted = null;
+        this.onPriceAdjusted = null;
         this.toastRootId = 'delete-confirm-toast-root';
         this.isConfirming = false;
         this.pendingConfirmation = null;
@@ -81,6 +85,8 @@ export class ProductController {
         try {
             await this.productService.deleteProduct(productId);
             this.moveProductToDeletedState(productId);
+            this.feedbackView.showSuccess('Product deleted successfully!');
+
 
             if (typeof this.onProductDeleted === 'function') {
                 this.onProductDeleted();
@@ -92,6 +98,16 @@ export class ProductController {
 
     openAdjustStockModal() {
         this.stockAdjustmentView?.show(this.state.products);
+    }
+
+    openAdjustPriceModal(productId = '') {
+        const product = productId ? this.findProductById(productId) : null;
+        if (productId && !product) {
+            this.feedbackView.showActionError('Product not found');
+            return;
+        }
+
+        this.priceAdjustmentView?.show(this.state.products, product);
     }
 
     async handleStockAdjustmentSubmit() {
@@ -128,6 +144,35 @@ export class ProductController {
         }
     }
 
+    async handlePriceAdjustmentSubmit() {
+        if (!this.priceAdjustmentView) {
+            return;
+        }
+
+        const formData = this.priceAdjustmentView.getFormData();
+        const validation = this.productService.validatePriceAdjustmentFormData(formData);
+
+        if (!validation.valid) {
+            this.priceAdjustmentView.showError(validation.error);
+            return;
+        }
+
+        try {
+            await this.productService.adjustPrice(formData.productId, validation.newPrice);
+            this.updateProductPrice(formData.productId, validation.newPrice);
+
+            this.priceAdjustmentView.resetForm();
+            this.priceAdjustmentView.hide();
+            this.feedbackView.showSuccess('Price adjusted successfully!');
+
+            if (typeof this.onPriceAdjusted === 'function') {
+                this.onPriceAdjusted();
+            }
+        } catch (error) {
+            this.priceAdjustmentView.showError(error.message || 'Failed to adjust price');
+        }
+    }
+
     handleRestore(productId) {
         console.warn(`Restore is not implemented yet for product ${productId}.`);
     }
@@ -137,13 +182,13 @@ export class ProductController {
     }
 
     moveProductToDeletedState(productId) {
-        const index = this.state.products.findIndex((product) => String(product.id ?? product.productId) === String(productId));
+        const index = this.state.products.findIndex((product) => String(getProductId(product)) === String(productId));
         if (index === -1) {
             return;
         }
 
         const removedProduct = this.state.products.splice(index, 1)[0];
-        this.state.dashboard.products = this.state.dashboard.products.filter((product) => String(product.id ?? product.productId) !== String(productId));
+        this.state.dashboard.products = this.state.dashboard.products.filter((product) => String(getProductId(product)) !== String(productId));
 
         if (this.state.loaded.deletedProducts) {
             this.state.deletedProducts.unshift({
@@ -154,12 +199,12 @@ export class ProductController {
     }
 
     findProductById(productId) {
-        return this.state.products.find((product) => String(product.id ?? product.productId) === String(productId)) || null;
+        return this.state.products.find((product) => String(getProductId(product)) === String(productId)) || null;
     }
 
     updateProductStock(productId, quantityChange) {
         const updateStock = (product) => {
-            if (String(product.id ?? product.productId) !== String(productId)) {
+            if (String(getProductId(product)) !== String(productId)) {
                 return;
             }
 
@@ -172,6 +217,20 @@ export class ProductController {
         this.state.dashboard.products.forEach(updateStock);
     }
 
+    updateProductPrice(productId, price) {
+        const updatePrice = (product) => {
+            if (String(getProductId(product)) !== String(productId)) {
+                return;
+            }
+
+            product.unitPrice = price;
+            product.price = price;
+        };
+
+        this.state.products.forEach(updatePrice);
+        this.state.dashboard.products.forEach(updatePrice);
+    }
+
     requestDeleteConfirmation(product) {
         return new Promise((resolve) => {
             if (this.pendingConfirmation && typeof this.pendingConfirmation.cleanup === 'function') {
@@ -182,8 +241,8 @@ export class ProductController {
 
             const root = this.getToastRoot();
             const toast = document.createElement('div');
-            const productName = product?.name ?? 'this product';
-            const productSku = product?.sku ?? product?.skUnit ?? '';
+            const productName = getProductName(product, 'this product');
+            const productSku = getProductSku(product, '');
             const productLabel = productSku
                 ? `${productName} (${productSku})`
                 : productName;

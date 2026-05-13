@@ -1,4 +1,5 @@
 import { renderPagination } from '../utils/pagination.js';
+import { formatDateTime, getProductCategoryName, getProductId, getProductName, getProductSku } from '../utils/productDisplay.js';
 
 export class RemovedProductsView {
     constructor() {
@@ -79,24 +80,18 @@ export class RemovedProductsView {
         if (!this.tableBody) return;
 
         this.tableBody.innerHTML = products.map(p => {
-            const productId = p.id ?? p.productId;
-            const skuValue = p.skUnit || 'N/A';
-            const deletedDateRaw = p.deletedAt;
-            const createdDateRaw = p.createdAt;
-            const formattedDeletedDate = deletedDateRaw
-                ? new Date(deletedDateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                : 'N/A';
-            const formattedCreatedDate = createdDateRaw
-                ? new Date(createdDateRaw).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
-                : 'N/A';
+            const productId = getProductId(p);
+            const skuValue = getProductSku(p);
+            const formattedDeletedDate = formatDateTime(p.deletedAt);
+            const formattedCreatedDate = formatDateTime(p.createdAt);
 
             return `
                 <tr data-product-id="${productId}">
                     <td class="px-4">
-                        <div class="fw-medium">${p.name ?? 'Unnamed Product'}</div>
+                        <div class="fw-medium">${getProductName(p)}</div>
                         <div class="text-muted small">${skuValue}</div>
                     </td>
-                    <td><span class="badge bg-light text-dark border">${p.categoryName || 'General'}</span></td>
+                    <td><span class="badge bg-light text-dark border">${getProductCategoryName(p)}</span></td>
                     <td class="text-muted small">${formattedCreatedDate}</td>
                     <td class="text-muted small">${formattedDeletedDate}</td>
                     <td class="text-end px-4">

@@ -1,3 +1,5 @@
+import { SearchableSelect } from '../utils/searchableSelect.js';
+
 export class AddProductView {
     constructor() {
         this.form = document.getElementById('addProductForm');
@@ -7,6 +9,10 @@ export class AddProductView {
         this.nameInput = document.getElementById('pName');
         this.priceInput = document.getElementById('pPrice');
         this.skuInput = document.getElementById('pSku');
+        this.categoryPicker = new SearchableSelect(this.categorySelect, {
+            emptyText: 'No categories found',
+            placeholder: 'Find a category (optional)',
+        });
     }
 
     show() {
@@ -48,6 +54,7 @@ export class AddProductView {
             option.textContent = cat.name ?? 'Unknown category';
             this.categorySelect.appendChild(option);
         });
+        this.categoryPicker.refreshOptions();
     }
 
     getFormData() {

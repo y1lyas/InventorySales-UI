@@ -23,7 +23,7 @@
         <nav class="nav flex-column sidebar-nav">
             <a href="/pages/dashboard.html" class="nav-link"><i class="bi bi-grid-1x2 me-2"></i>Dashboard</a>
             <a href="/pages/products.html" class="nav-link active"><i class="bi bi-box-seam me-2"></i>Products</a>
-            <a href="#" class="nav-link"><i class="bi bi-tags me-2"></i>Categories</a>
+            <a href="/pages/categories.html" class="nav-link"><i class="bi bi-tags me-2"></i>Categories</a>
             <a href="#" class="nav-link"><i class="bi bi-cart3 me-2"></i>Sales</a>
         </nav>
     </aside>
@@ -59,6 +59,9 @@
                 <button class="btn btn-white bg-white border shadow-sm" id="btnAdjustStock">
                     <i class="bi bi-arrow-left-right text-primary me-2"></i>Adjust Stock
                 </button>
+                <button class="btn btn-white bg-white border shadow-sm" id="btnAdjustPrice">
+                    <i class="bi bi-cash-stack text-success me-2"></i>Adjust Price
+                </button>
                 <button class="btn btn-white bg-white border shadow-sm" id="btnToggleTrash">
                     <i class="bi bi-recycle text-danger me-2"></i>Recycle Bin
                 </button>
@@ -67,10 +70,10 @@
              
 <!-- products table -->
         <div id="table-view" class="card card-custom overflow-hidden d-none">
-            <table class="table mb-0 align-middle">
+            <table class="table table-sm inventory-table mb-0 align-middle">
                 <thead>
                     <tr>
-                        <th class="px-4 py-3">Product Name</th>
+                        <th class="px-4">Product Name</th>
                         <th>Category</th>
                         <th>Stock</th>
                         <th>Price</th>
@@ -97,7 +100,7 @@
         <!-- no product  -->
         <div id="empty-state" class="text-center d-none">
             <div class="mb-4 text-muted">
-                <i class="bi bi-box-seam" style="font-size: 4rem;"></i>
+                <i id="empty-state-icon" class="bi bi-box-seam" style="font-size: 4rem;"></i>
             </div>
             <h4 id="empty-state-title" class="fw-bold">Your inventory is empty</h4>
             <p id="empty-state-text" class="text-muted mb-4">Start by adding your first product to manage your stock levels.</p>
@@ -117,7 +120,7 @@
                 <form id="adjustStockForm">
                     <div class="mb-3">
                         <label for="adjustStockProduct" class="form-label">Product</label>
-                        <select class="form-select" id="adjustStockProduct" required>
+                        <select class="form-select searchable-select-native" id="adjustStockProduct" required>
                             <option value="">Select product</option>
                         </select>
                     </div>
@@ -183,6 +186,40 @@
             </div>
         </div>
     </div>
+</div>
+<!-- Adjust Price Modal -->
+<div class="modal fade" id="adjustPriceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Adjust Price</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="adjustPriceForm">
+                    <div class="mb-3">
+                        <label for="adjustPriceProduct" class="form-label">Product</label>
+                        <select class="form-select searchable-select-native" id="adjustPriceProduct" required>
+                            <option value="">Select product</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex gap-2 align-items-center">
+            <div class="flex-grow-1">
+                <div class="input-group">
+                    <span class="input-group-text">TRY</span>
+                    <input type="number" min="0.01" step="0.01" class="form-control" id="adjustPriceValue" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary px-4 text-nowrap">
+                Save Price
+            </button>
+        </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 <!-- Recycle Bin Modal -->
  <div class="modal fade" id="recycleBinModal" tabindex="-1" aria-labelledby="recycleBinModalLabel" aria-hidden="true">

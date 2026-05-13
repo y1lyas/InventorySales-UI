@@ -1,34 +1,55 @@
 import { SearchableSelect } from '../utils/searchableSelect.js';
 import { getProductId, getProductOptionLabel } from '../utils/productDisplay.js';
 
-export class StockAdjustmentView {
+export class PriceAdjustmentView {
     constructor() {
-        this.form = document.getElementById('adjustStockForm');
-        this.modalElement = document.getElementById('adjustStockModal');
+        this.form = document.getElementById('adjustPriceForm');
+        this.modalElement = document.getElementById('adjustPriceModal');
         this.modalInstance = null;
-        this.productSelect = document.getElementById('adjustStockProduct');
+        this.productSelect = document.getElementById('adjustPriceProduct');
         this.productPicker = new SearchableSelect(this.productSelect, {
-            placeholder: 'Find a product to adjust',
+            placeholder: 'Find a product to price',
             emptyText: 'No products match that search'
         });
-        this.quantityInput = document.getElementById('adjustStockQuantity');
-        this.actionSelect = document.getElementById('adjustStockAction');
+        this.priceInput = document.getElementById('adjustPriceValue');
     }
 
-    show(products) {
+    show(products, selectedProduct = null) {
+        if (!this.modalElement) return;
+
         this.renderProducts(products);
+
+        const productId = selectedProduct ? getProductId(selectedProduct) : '';
+        const price = selectedProduct?.unitPrice ?? selectedProduct?.price ?? '';
+
+        this.productPicker?.setValue(productId, false);
+
+        if (this.priceInput) {
+            this.priceInput.value = price !== '' ? Number(price).toFixed(2) : '';
+        }
 
         if (!this.modalInstance) {
             this.modalInstance = new bootstrap.Modal(this.modalElement);
         }
 
         this.modalInstance.show();
+        this.priceInput?.focus();
     }
 
     hide() {
-        if (this.modalInstance) {
-            this.modalInstance.hide();
-        }
+        this.modalInstance?.hide();
+    }
+
+    getFormData() {
+        return {
+            productId: this.productPicker?.hasUncommittedSearch() ? '' : (this.productSelect?.value || ''),
+            newPrice: this.priceInput?.value || ''
+        };
+    }
+
+    resetForm() {
+        this.form?.reset();
+        this.productPicker?.setValue('', false);
     }
 
     renderProducts(products) {
@@ -52,23 +73,6 @@ export class StockAdjustmentView {
         });
 
         this.productPicker?.refreshOptions();
-    }
-
-    getFormData() {
-        return {
-            productId: this.productPicker?.hasUncommittedSearch() ? '' : (this.productSelect?.value || ''),
-            quantityRaw: this.quantityInput?.value || '',
-            action: this.actionSelect?.value || 'increase'
-        };
-    }
-
-    resetForm() {
-        this.form?.reset();
-        this.productPicker?.setValue('', false);
-    }
-
-    showSuccess(message) {
-        alert(message);
     }
 
     showError(message) {

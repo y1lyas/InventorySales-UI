@@ -20,13 +20,13 @@
         <nav class="nav flex-column sidebar-nav">
             <a href="/pages/dashboard.html" class="nav-link active"><i class="bi bi-grid-1x2 me-2"></i>Dashboard</a>
             <a href="/pages/products.html" class="nav-link"><i class="bi bi-box-seam me-2"></i>Products</a>
-            <a href="#" class="nav-link"><i class="bi bi-tags me-2"></i>Categories</a>
+            <a href="/pages/categories.html" class="nav-link"><i class="bi bi-tags me-2"></i>Categories</a>
             <a href="#" class="nav-link"><i class="bi bi-cart3 me-2"></i>Sales</a>
         </nav>
     </aside>
 
     <main class="main-content">
-        <header class="d-flex justify-content-between align-items-center mb-4">
+        <header class="d-flex justify-content-between align-items-center">
             <div>
                 <h2 class="fw-bold mb-1">Dashboard</h2>
                 <p class="text-muted small">Review stock movement history across your inventory.</p>
@@ -39,8 +39,8 @@
                     <span class="input-group-text bg-white border-end-0">
                         <i class="bi bi-search text-muted"></i>
                     </span>
-                    <input type="search" id="dashboard-movement-search" class="form-control border-start-0 ps-0" placeholder="Search stock movements by name or SKU">
-                    <select id="dashboard-movement-type-select" class="form-select" style="max-width: 170px;">
+                    <input type="search" id="dashboard-movement-search" class="form-control border-start-0 ps-0" placeholder="Search movements by name or SKU">
+                    <select id="dashboard-movement-type-select" class="form-select" style="max-width: 160px;">
                         <option value="">All movements</option>
                         <option value="1">Increases</option>
                         <option value="2">Decreases</option>
@@ -48,41 +48,45 @@
                 </div>
             </div>
             <div style="min-width: 240px; max-width: 420px;">
-                <select id="dashboard-product-select" class="form-select">
+                   <label for="dashboard-product-select" class="form-label mb-1 fw-medium">Find by product:</label>
+                <select id="dashboard-product-select" class="form-select searchable-select-native">
                     <option value="">All products</option>
                 </select>
             </div>
         </section>
 
-        <section class="card card-custom overflow-hidden" id="stock-movement-card">
-            <div class="table-responsive d-none" id="stock-movement-table">
-                <table class="table table-sm stock-movements-table mb-0 align-middle">
-                    <thead>
-                        <tr>
-                            <th class="px-4 py-3">Product</th>
-                            <th>Date</th>
-                            <th>Movement</th>
-                            <th>Quantity</th>
-                        </tr>
-                    </thead>
-                    <tbody id="stock-movement-table-body"></tbody>
-                </table>
-            </div>
-            <div id="stock-movement-loading" class="text-center py-5 spinner">
-                <div class="spinner-border mb-4 p-4" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-            <div id="stock-movement-empty" class="text-center text-muted py-5 d-none">
-                No stock movements found.
-            </div>
-            <div id="stock-movement-error" class="alert alert-danger m-4 d-none" role="alert"></div>
+        <div id="stock-movement-table" class="card card-custom overflow-hidden d-none">
+            <table class="table table-sm inventory-table stock-movements-table mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th class="px-4">Product</th>
+                        <th>Date</th>
+                        <th>Movement</th>
+                        <th class="text-end px-4">Quantity</th>
+                    </tr>
+                </thead>
+                <tbody id="stock-movement-table-body"></tbody>
+            </table>
             <div id="stock-movement-pagination-container" class="d-none border-top px-4 py-3">
                 <nav aria-label="Stock movement pagination">
                     <ul class="pagination justify-content-center mb-0" id="stock-movement-pagination"></ul>
                 </nav>
             </div>
-        </section>
+        </div>
+        <div id="stock-movement-loading" class="text-center py-5 spinner">
+            <div class="spinner-border mb-4 p-4" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+        <div id="stock-movement-empty" class="text-center pt-4 d-none">
+            <div class="mb-4 text-muted">
+                <i class="bi bi-arrow-left-right" style="font-size: 4rem;"></i>
+            </div>
+            <h4 id="stock-movement-empty-title" class="fw-bold">No stock movements found</h4>
+            <p id="stock-movement-empty-text" class="text-muted mb-4">Stock changes will appear here after inventory is adjusted.</p>
+            <button id="stock-movement-empty-button" class="btn btn-primary px-4 py-2 d-none" type="button"></button>
+        </div>
+        <div id="stock-movement-error" class="alert alert-danger d-none" role="alert"></div>
     </main>
 </div>
 

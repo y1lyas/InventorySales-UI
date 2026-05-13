@@ -99,18 +99,15 @@ body {
     position: relative;
 }
 
-.searchable-select-icon {
-    position: absolute;
-    left: 0.85rem;
-    top: 50%;
-    z-index: 2;
-    color: #6b7280;
-    transform: translateY(-50%);
+.searchable-select-input {
+    padding-left: 0.75rem;
+    padding-right: 2.4rem;
 }
 
-.searchable-select-input {
-    padding-left: 2.35rem;
-    padding-right: 2.4rem;
+.searchable-select-input::-webkit-search-cancel-button,
+.searchable-select-input::-webkit-search-decoration {
+    appearance: none;
+    -webkit-appearance: none;
 }
 
 .searchable-select-clear {
@@ -188,6 +185,43 @@ body {
     margin-top: auto;
 }
 
+.pagination {
+    gap: 0.25rem;
+}
+
+.pagination .page-link {
+    padding: 0.16rem 0.32rem;
+    color: rgba(107, 114, 128, 0.66);
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    font-size: 0.88rem;
+    line-height: 1.2;
+}
+
+.pagination .page-link i {
+    font-size: 0.84rem;
+}
+
+.pagination .page-link:hover,
+.pagination .page-link:focus {
+    color: rgba(55, 65, 81, 0.86);
+    background: transparent;
+    box-shadow: none;
+}
+
+.pagination .page-item.active .page-link {
+    color: rgba(17, 24, 39, 0.76);
+    background: transparent;
+    border: 0;
+    font-weight: 600;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: rgba(107, 114, 128, 0.3);
+    background: transparent;
+}
+
 #stock-movement-table {
     flex: 1;
 }
@@ -229,6 +263,11 @@ body {
 #empty-state {
     padding: 5rem 2rem;
     border: 2px dashed var(--border-color);
+    border-radius: 16px;
+}
+#stock-movement-empty {
+    padding: 5rem 2rem;
+    border: 2px solid var(--border-color);
     border-radius: 16px;
 }
 

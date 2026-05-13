@@ -57,7 +57,7 @@ export class DashboardController {
             this.state.dashboard.movementsPagination = movements.pagination;
             this.state.dashboard.movementsPage = movements.pagination.currentPage;
 
-            this.view.renderMovements(movements.movements);
+            this.view.renderMovements(movements.movements, this.getEmptyStateOptions());
             this.view.renderPagination(movements.pagination, (nextPage) => {
                 this.state.dashboard.movementsPage = nextPage;
                 this.loadStockMovements();
@@ -90,5 +90,45 @@ export class DashboardController {
         this.state.dashboard.movementsPage = 1;
         this.view.setSelectedMovementType(this.state.dashboard.movementTypeFilter);
         this.loadStockMovements();
+    }
+
+    clearFilters() {
+        this.state.dashboard.movementSearchTerm = '';
+        this.state.dashboard.productFilterId = '';
+        this.state.dashboard.movementTypeFilter = '';
+        this.state.dashboard.movementsPage = 1;
+
+        this.view.setSearchTerm('');
+        this.view.setSelectedProduct('');
+        this.view.setSelectedMovementType('');
+        this.loadStockMovements();
+    }
+
+    getEmptyStateOptions() {
+        if (this.state.dashboard.productFilterId) {
+            return {
+                title: 'There are no movements for this product',
+                text: 'Try selecting another product or clear filters to see all stock movements.',
+                buttonText: 'Clear filters',
+                buttonAction: () => this.clearFilters()
+            };
+        }
+
+        if (
+            this.state.dashboard.movementSearchTerm ||
+            this.state.dashboard.movementTypeFilter
+        ) {
+            return {
+                title: 'No stock movements found',
+                text: 'No stock movements match the current search or filters.',
+                buttonText: 'Clear filters',
+                buttonAction: () => this.clearFilters()
+            };
+        }
+
+        return {
+            title: 'No stock movements',
+            text: 'Stock changes will appear here after inventory is adjusted.'
+        };
     }
 }
