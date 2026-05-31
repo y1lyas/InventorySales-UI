@@ -6,15 +6,15 @@ export class ProductService {
         this.pageSize = pageSize || 10;
     }
 
-    async getAllProducts({ isDeleted = false, categoryId = '' } = {}) {
+    async getAllProducts({ isDeleted = false, categoryId = '', searchTerm = '', filters = {} } = {}) {
         const allProducts = [];
         let page = 1;
         let totalPages = 1;
 
         do {
-            const data = await this.productApi.getAll(page, 100, '', isDeleted, categoryId);
+            const data = await this.productApi.getAll(page, 100, searchTerm, isDeleted, categoryId, filters);
             const products = this.extractProducts(data);
-            const pagination = this.calculatePaginationInfo(data, products.length, page, 100);
+            const pagination = this.calculatePaginationInfo(data, page, 100);
 
             allProducts.push(...products);
             totalPages = pagination.totalPages;
@@ -42,6 +42,24 @@ export class ProductService {
 
      async adjustPrice(productId, newPrice) {
         return await this.productApi.adjustPrice({ productId, newPrice });
+    }
+
+    async updateName(productId, newName) {
+        return await this.productApi.updateName({ productId, name: newName });
+    }
+
+    validateProductName(name) {
+        const trimmedName = String(name || '').trim();
+
+        if (!trimmedName) {
+            return { valid: false, error: 'Product name is required' };
+        }
+
+        if (trimmedName.length > 120) {
+            return { valid: false, error: 'Product name must be 120 characters or less' };
+        }
+
+        return { valid: true, name: trimmedName };
     }
 
     validateStockAdjustmentFormData(formData) {
@@ -108,9 +126,24 @@ export class ProductService {
         };
     }
 
-    filterProducts(products, { searchTerm = '', categoryId = '' } = {}) {
+    filterProducts(products, {
+        searchTerm = '',
+        categoryId = '',
+        minStock = '',
+        maxStock = '',
+        minPrice = '',
+        maxPrice = '',
+        startDate = '',
+        endDate = ''
+    } = {}) {
         const normalizedSearch = String(searchTerm || '').trim().toLowerCase();
         const normalizedCategoryId = String(categoryId || '');
+        const stockMin = this.parseNumberFilter(minStock);
+        const stockMax = this.parseNumberFilter(maxStock);
+        const priceMin = this.parseNumberFilter(minPrice);
+        const priceMax = this.parseNumberFilter(maxPrice);
+        const startTime = this.parseDateFilter(startDate, false);
+        const endTime = this.parseDateFilter(endDate, true);
 
         return products.filter((product) => {
             const matchesSearch = !normalizedSearch || `${product.name ?? ''} ${product.sku ?? product.skUnit ?? ''}`
@@ -119,9 +152,42 @@ export class ProductService {
 
             const productCategoryId = String(product.categoryId ?? this.getCategoryId(product.category ?? product) ?? '');
             const matchesCategory = !normalizedCategoryId || productCategoryId === normalizedCategoryId;
+            const stock = Number(product.currentStock ?? product.stock ?? 0);
+            const price = Number(product.unitPrice ?? product.price ?? 0);
+            const createdTime = product.createdAt ? new Date(product.createdAt).getTime() : null;
+            const matchesStock = (stockMin === null || stock >= stockMin) && (stockMax === null || stock <= stockMax);
+            const matchesPrice = (priceMin === null || price >= priceMin) && (priceMax === null || price <= priceMax);
+            const matchesDate = (startTime === null || (createdTime !== null && createdTime >= startTime)) &&
+                (endTime === null || (createdTime !== null && createdTime <= endTime));
 
-            return matchesSearch && matchesCategory;
+            return matchesSearch && matchesCategory && matchesStock && matchesPrice && matchesDate;
         });
+    }
+
+    parseNumberFilter(value) {
+        if (value === undefined || value === null || value === '') {
+            return null;
+        }
+
+        const parsed = Number(String(value).replace(',', '.'));
+        return Number.isFinite(parsed) ? parsed : null;
+    }
+
+    parseDateFilter(value, endOfDay) {
+        if (!value) {
+            return null;
+        }
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return null;
+        }
+
+        if (endOfDay) {
+            date.setHours(23, 59, 59, 999);
+        }
+
+        return date.getTime();
     }
 
     paginateProducts(products, currentPage) {
@@ -162,8 +228,8 @@ export class ProductService {
         return extractCollection(data, ['products']);
     }
 
-    calculatePaginationInfo(data, currentCount, currentPage, fallbackPageSize) {
-        return extractPagination(data, currentCount, currentPage, fallbackPageSize ?? this.pageSize);
+    calculatePaginationInfo(data, currentPage, fallbackPageSize) {
+        return extractPagination(data, currentPage, fallbackPageSize ?? this.pageSize);
     }
 
     getCategoryId(item) {

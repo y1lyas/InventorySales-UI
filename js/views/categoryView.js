@@ -1,4 +1,5 @@
 import { getProductId, getProductOptionLabel } from '../utils/productDisplay.js';
+import { renderPagination } from '../utils/pagination.js';
 import { SearchableSelect } from '../utils/searchableSelect.js';
 import { Toast } from '../utils/toast.js';
 
@@ -17,20 +18,22 @@ export class CategoryView {
         this.alertContainer = document.getElementById('category-alert');
         this.loadingState = document.getElementById('category-loading');
         this.content = document.getElementById('category-content');
+        this.paginationContainer = document.getElementById('category-pagination-container');
+        this.pagination = document.getElementById('category-pagination');
 
-           this.assignProductPicker = new SearchableSelect(this.assignProductSelect, {
-        emptyText: 'No products found',
-        placeholder: 'Find a product to assign',
-    });
+        this.assignProductPicker = new SearchableSelect(this.assignProductSelect, {
+            emptyText: 'No products found',
+            placeholder: 'Find a product to assign',
+        });
 
-    this.unassignProductPicker = new SearchableSelect(this.unassignProductSelect, {
-        emptyText: 'No products found',
-        placeholder: 'Find a product to unassign',
-    });
-         this.assignCategoryPicker = new SearchableSelect(this.assignCategorySelect, {
-        emptyText: 'No categories found',
-        placeholder: 'Find a category to assign',
-    });
+        this.unassignProductPicker = new SearchableSelect(this.unassignProductSelect, {
+            emptyText: 'No products found',
+            placeholder: 'Find a product to unassign',
+        });
+        this.assignCategoryPicker = new SearchableSelect(this.assignCategorySelect, {
+            emptyText: 'No categories found',
+            placeholder: 'Find a category to assign',
+        });
     }
 
     showLoading() {
@@ -56,7 +59,24 @@ export class CategoryView {
         }
 
         this.renderCategoryOptions(categories, getCategoryId);
-    this.assignCategoryPicker?.refreshOptions();
+        this.assignCategoryPicker?.refreshOptions();
+    }
+
+    renderCategoryList(pageCategories, getCategoryId) {
+        if (this.categoryList) {
+            this.categoryList.innerHTML = pageCategories.length
+                ? pageCategories.map((category) => `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>${category.name ?? 'Unnamed category'}</span>
+                        <span class="text-muted small">${getCategoryId(category)}</span>
+                    </li>
+                `).join('')
+                : '<li class="list-group-item text-muted">No categories found.</li>';
+        }
+    }
+
+    renderCategoryPagination({ currentPage, totalPages }, onPageChange) {
+        renderPagination(this.pagination, this.paginationContainer, { currentPage, totalPages }, onPageChange);
     }
 
     renderProducts(products) {
@@ -124,11 +144,11 @@ export class CategoryView {
     }
 
     showSuccess(message) {
-    Toast.show(message, 'success');
+        Toast.show(message, 'success');
     }
 
     showError(message) {
-    Toast.show(message, 'danger');
+        Toast.show(message, 'danger');
     }
 
     showAlert(message, type) {

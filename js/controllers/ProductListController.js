@@ -5,6 +5,8 @@ export class ProductListController {
         this.state = state;
         this.isDeletedList = options?.isDeletedList === true;
         this.onCreateProduct = options?.onCreateProduct || null;
+        this.onUpdateProductName = options?.onUpdateProductName || null;
+        this.editingProductId = null;
     }
     
     async loadProducts(forceReload = false) {
@@ -22,7 +24,10 @@ export class ProductListController {
 
         try {
             this.state[stateKey] = await this.productService.getAllProducts({
-                isDeleted: this.isDeletedList
+                isDeleted: this.isDeletedList,
+                categoryId: this.isDeletedList ? '' : this.state.ui.productCategoryId,
+                searchTerm: this.isDeletedList ? this.state.ui.trashSearchTerm : this.state.ui.productSearchTerm,
+                filters: this.isDeletedList ? {} : this.getAdvancedFilters()
             });
             this.state.loaded[loadedKey] = true;
         } catch (error) {
@@ -50,12 +55,55 @@ export class ProductListController {
             return;
         }
 
-        this.view.renderProducts(pageData.products);
+        this.view.renderProducts(pageData.products, {
+            editingProductId: this.isDeletedList ? null : this.editingProductId
+        });
         this.view.renderPagination(pageData.pagination, (nextPage) => {
             this.state.ui[pageKey] = nextPage;
+            this.editingProductId = null;
             this.render();
         });
         this.view.showTable();
+    }
+
+    async handleEditAction(productId) {
+        if (this.isDeletedList || !productId) {
+            return;
+        }
+
+        if (String(this.editingProductId) !== String(productId)) {
+            this.editingProductId = productId;
+            this.render();
+            this.view.focusInlineProductName?.(productId);
+            return;
+        }
+
+        await this.saveInlineName(productId);
+    }
+
+    async saveInlineName(productId) {
+        if (typeof this.onUpdateProductName !== 'function') {
+            return;
+        }
+
+        const newName = this.view.getInlineProductName?.(productId);
+        const updated = await this.onUpdateProductName(productId, newName);
+
+        if (updated) {
+            this.editingProductId = null;
+            this.render();
+        } else {
+            this.view.focusInlineProductName?.(productId);
+        }
+    }
+
+    cancelInlineEdit() {
+        if (!this.editingProductId) {
+            return;
+        }
+
+        this.editingProductId = null;
+        this.render();
     }
 
     setSearchTerm(searchTerm) {
@@ -92,6 +140,7 @@ export class ProductListController {
     clearFilters() {
         this.state.ui.productSearchTerm = '';
         this.state.ui.productCategoryId = '';
+        this.setAdvancedFilterState({});
         this.state.ui.productsPage = 1;
 
         const searchInput = document.getElementById('product-search');
@@ -99,14 +148,57 @@ export class ProductListController {
 
         if (searchInput) searchInput.value = '';
         if (categoryFilter) categoryFilter.value = '';
+        this.view.setCategoryFilterValue?.('');
+        this.view.setAdvancedFilterValues?.(this.getAdvancedFilters());
 
-        this.render();
+        this.state.loaded.products = false;
+        this.loadProducts(true);
+    }
+
+    setAdvancedFilters(filters = {}) {
+        if (this.isDeletedList) {
+            return;
+        }
+
+        this.setAdvancedFilterState(filters);
+        this.state.ui.productsPage = 1;
+        this.state.loaded.products = false;
+        this.loadProducts(true);
+    }
+
+    setAdvancedFilterState(filters = {}) {
+        this.state.ui.productMinStock = this.normalizeFilterValue(filters.minStock);
+        this.state.ui.productMaxStock = this.normalizeFilterValue(filters.maxStock);
+        this.state.ui.productMinPrice = this.normalizeFilterValue(filters.minPrice);
+        this.state.ui.productMaxPrice = this.normalizeFilterValue(filters.maxPrice);
+        this.state.ui.productStartDate = this.normalizeFilterValue(filters.startDate);
+        this.state.ui.productEndDate = this.normalizeFilterValue(filters.endDate);
+    }
+
+    normalizeFilterValue(value) {
+        return value === undefined || value === null ? '' : String(value).trim();
+    }
+
+    getAdvancedFilters() {
+        return {
+            minStock: this.state.ui.productMinStock,
+            maxStock: this.state.ui.productMaxStock,
+            minPrice: this.state.ui.productMinPrice,
+            maxPrice: this.state.ui.productMaxPrice,
+            startDate: this.state.ui.productStartDate,
+            endDate: this.state.ui.productEndDate
+        };
+    }
+
+    hasAdvancedFilters() {
+        return Object.values(this.getAdvancedFilters()).some((value) => value !== '');
     }
 
     getFilteredProducts() {
         return this.productService.filterProducts(this.state[this.getStateKey()], {
             searchTerm: this.isDeletedList ? this.state.ui.trashSearchTerm : this.state.ui.productSearchTerm,
-            categoryId: this.isDeletedList ? '' : this.state.ui.productCategoryId
+            categoryId: this.isDeletedList ? '' : this.state.ui.productCategoryId,
+            ...(this.isDeletedList ? {} : this.getAdvancedFilters())
         });
     }
 
@@ -128,11 +220,11 @@ export class ProductListController {
             };
         }
 
-        if (this.state.ui.productSearchTerm || this.state.ui.productCategoryId) {
+        if (this.state.ui.productSearchTerm || this.state.ui.productCategoryId || this.hasAdvancedFilters()) {
             return {
                 icon: 'bi-search',
                 title: 'No products found',
-                text: 'No products match the current search or category filter.',
+                text: 'No products match the current filters.',
                 buttonText: 'Clear filters',
                 buttonAction: () => this.clearFilters()
             };

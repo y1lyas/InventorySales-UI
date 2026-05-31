@@ -6,12 +6,23 @@ export const state = {
         products: false,
         deletedProducts: false,
         categories: false,
-        dashboardProducts: false
+        movementProducts: false,
+        sales: false
     },
-    dashboard: {
+    sales: [],
+    salesPagination: {
+        currentPage: 1,
+        totalPages: 1
+    },
+    movement: {
         products: [],
         productFilterId: '',
         movementTypeFilter: '',
+        movementReasonFilter: '',
+        movementStartDate: '',
+        movementEndDate: '',
+        movementMinQuantity: '',
+        movementMaxQuantity: '',
         movementSearchTerm: '',
         stockMovements: [],
         movementsPage: 1,
@@ -24,11 +35,29 @@ export const state = {
     ui: {
         pageSize: 12,
         productsPage: 1,
+        productMinStock: '',
+        productMaxStock: '',
+        productMinPrice: '',
+        productMaxPrice: '',
+        productStartDate: '',
+        productEndDate: '',
         trashPage: 1,
+        categoriesPage: 1,
+        categoriesPageSize: 6,
+        salesPage: 1,
+        salesPageSize: 12,
+        salesStartDate: '',
+        salesEndDate: '',
+        salesMinAmount: '',
+        salesMaxAmount: '',
+        salesSaleId: '',
+        saleCreatePage: 1,
+        saleCreateSearchTerm: '',
         productSearchTerm: '',
         trashSearchTerm: '',
         productCategoryId: '',
         isLoadingProducts: false,
-        isLoadingDeletedProducts: false
+        isLoadingDeletedProducts: false,
+        isLoadingSales: false
     }
 };

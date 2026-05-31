@@ -1,4 +1,4 @@
-import { extractCollection, extractPagination } from '../utils/apiResponse.js';
+import { extractCollection } from '../utils/apiResponse.js';
 
 
 export class CategoryService {
@@ -7,13 +7,15 @@ export class CategoryService {
     }
 
     async getCategories() {
-        return await this.categoryApi.getAll();
+        const data = await this.categoryApi.getAll();
+        return extractCollection(data);
     }
 
     async createCategory(data) {
-        return await this.categoryApi.create({ 
-        name: data.name,
-        description: data.description });
+        return await this.categoryApi.create({
+            name: data.name,
+            description: data.description
+        });
     }
 
     async assignProduct(productId, categoryId) {
@@ -24,17 +26,17 @@ export class CategoryService {
         return await this.categoryApi.unassignProduct({ productId });
     }
 
-   validateCategory(data) {
-    if (!data.name || data.name.trim().length < 2) {
-        return { valid: false, error: 'Invalid category name' };
-    }
+    validateCategory(data) {
+        if (!data.name || data.name.trim().length < 2) {
+            return { valid: false, error: 'Invalid category name' };
+        }
 
-    if (data.description && data.description.length > 300) {
-        return { valid: false, error: 'Description too long' };
-    }
+        if (data.description && data.description.length > 300) {
+            return { valid: false, error: 'Description too long' };
+        }
 
-    return { valid: true };
-}
+        return { valid: true };
+    }
 
     validateAssignment(productId, categoryId) {
         if (!productId) {
@@ -59,7 +61,5 @@ export class CategoryService {
     getCategoryId(item) {
         return item?.id ?? item?.categoryId ?? item?.categoryGuid ?? item?._id ?? '';
     }
-    extractPagination(data, currentCount, currentPage, fallbackPageSize) {
-            return extractPagination(data, currentCount, currentPage, fallbackPageSize);
-        }
 }
+

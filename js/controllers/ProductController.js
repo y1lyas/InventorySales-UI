@@ -14,6 +14,7 @@ export class ProductController {
         this.onProductDeleted = null;
         this.onStockAdjusted = null;
         this.onPriceAdjusted = null;
+        this.onProductNameUpdated = null;
         this.toastRootId = 'delete-confirm-toast-root';
         this.isConfirming = false;
         this.pendingConfirmation = null;
@@ -56,7 +57,7 @@ export class ProductController {
          
 
             this.state.products.unshift(normalizedProduct);
-            this.state.dashboard.products.unshift(normalizedProduct);
+            this.state.movement.products.unshift(normalizedProduct);
             this.state.ui.productsPage = 1;
 
             this.view.resetForm();
@@ -173,6 +174,41 @@ export class ProductController {
         }
     }
 
+    async handleNameUpdate(productId, newName) {
+        if (!productId) {
+            return false;
+        }
+
+        const validation = this.productService.validateProductName(newName);
+
+        if (!validation.valid) {
+            this.feedbackView.showActionError(validation.error);
+            return false;
+        }
+
+        const product = this.findProductById(productId);
+        const currentName = getProductName(product, '').trim();
+
+        if (currentName === validation.name) {
+            return true;
+        }
+
+        try {
+            await this.productService.updateName(productId, validation.name);
+            this.updateProductName(productId, validation.name);
+            this.feedbackView.showSuccess('Product name updated successfully!');
+
+            if (typeof this.onProductNameUpdated === 'function') {
+                this.onProductNameUpdated();
+            }
+
+            return true;
+        } catch (error) {
+            this.feedbackView.showActionError(error.message || 'Failed to update product name');
+            return false;
+        }
+    }
+
     handleRestore(productId) {
         console.warn(`Restore is not implemented yet for product ${productId}.`);
     }
@@ -188,7 +224,7 @@ export class ProductController {
         }
 
         const removedProduct = this.state.products.splice(index, 1)[0];
-        this.state.dashboard.products = this.state.dashboard.products.filter((product) => String(getProductId(product)) !== String(productId));
+        this.state.movement.products = this.state.movement.products.filter((product) => String(getProductId(product)) !== String(productId));
 
         if (this.state.loaded.deletedProducts) {
             this.state.deletedProducts.unshift({
@@ -214,7 +250,7 @@ export class ProductController {
         };
 
         this.state.products.forEach(updateStock);
-        this.state.dashboard.products.forEach(updateStock);
+        this.state.movement.products.forEach(updateStock);
     }
 
     updateProductPrice(productId, price) {
@@ -228,7 +264,20 @@ export class ProductController {
         };
 
         this.state.products.forEach(updatePrice);
-        this.state.dashboard.products.forEach(updatePrice);
+        this.state.movement.products.forEach(updatePrice);
+    }
+
+    updateProductName(productId, name) {
+        const updateName = (product) => {
+            if (String(getProductId(product)) !== String(productId)) {
+                return;
+            }
+
+            product.name = name;
+        };
+
+        this.state.products.forEach(updateName);
+        this.state.movement.products.forEach(updateName);
     }
 
     requestDeleteConfirmation(product) {

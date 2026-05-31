@@ -1,13 +1,17 @@
 import { state } from './state/state.js';
 import { productApi } from './APIs/productApi.js';
 import { categoryApi } from './APIs/categoryApi.js';
+import { salesApi } from './APIs/salesApi.js';
 import { ProductService } from './services/productService.js';
 import { CategoryService } from './services/categoryService.js';
 import { StockMovementService } from './services/stockMovementService.js';
+import { SaleService } from './services/saleService.js';
 import { ProductListController } from './controllers/ProductListController.js';
 import { ProductController } from './controllers/ProductController.js';
-import { DashboardController } from './controllers/dashboardController.js';
+import { MovementController } from './controllers/movementController.js';
 import { CategoryController } from './controllers/categoryController.js';
+import { SaleListController } from './controllers/SaleListController.js';
+import { SaleCreateController } from './controllers/SaleCreateController.js';
 import { ProductListView } from './views/productListView.js';
 import { StockMovementsView } from './views/stockMovementsView.js';
 import { AddProductView } from './views/addProductView.js';
@@ -15,6 +19,9 @@ import { RemovedProductsView } from './views/removedProductsView.js';
 import { StockAdjustmentView } from './views/stockAdjustmentView.js';
 import { PriceAdjustmentView } from './views/priceAdjustmentView.js';
 import { CategoryView } from './views/categoryView.js';
+import { SaleListView } from './views/saleListView.js';
+import { SaleDetailsView } from './views/saleDetailsView.js';
+import { SaleCreateView } from './views/saleCreateView.js';
 
 let productSearchDebounceId = null;
 let trashSearchDebounceId = null;
@@ -26,13 +33,22 @@ function initializeApp() {
     const productService = new ProductService(productApi, state.ui.pageSize);
     const categoryService = new CategoryService(categoryApi);
     const stockMovementService = new StockMovementService(productApi);
+    const saleService = new SaleService(salesApi, state.ui.salesPageSize);
+
+    if (document.getElementById('sales-table-body')) {
+        initializeSalesPage(saleService);
+    }
+
+    if (document.getElementById('sale-product-table-body')) {
+        initializeSaleCreatePage(saleService, productService);
+    }
 
     if (document.getElementById('product-list-body')) {
         initializeProductsPage(productService, categoryService);
     }
 
     if (document.getElementById('stock-movement-table-body')) {
-        initializeDashboardPage(productService, stockMovementService);
+        initializeMovementPage(productService, stockMovementService);
     }
 
     if (document.getElementById('category-list')) {
@@ -59,7 +75,8 @@ function initializeProductsPage(productService, categoryService) {
         }
     );
     const productListController = new ProductListController(productListView, productService, state, {
-        onCreateProduct: () => productController.openCreateModal()
+        onCreateProduct: () => productController.openCreateModal(),
+        onUpdateProductName: (productId, newName) => productController.handleNameUpdate(productId, newName)
     });
     const deletedProductListController = new ProductListController(removedProductsView, productService, state, {
         isDeletedList: true
@@ -83,34 +100,63 @@ function initializeProductsPage(productService, categoryService) {
     };
 
     bindProductPageEvents(productListController, deletedProductListController, productController);
-    renderCategoryFilter(state.categories, productService);
+    productListView.bindCategoryFilterChange((categoryId) => productListController.setCategoryId(categoryId));
+    productListView.renderCategoryFilter(state.categories, (category) => productService.getCategoryId(category));
     productController.loadCategories().then(function () {
-        renderCategoryFilter(state.categories, productService);
+        productListView.renderCategoryFilter(state.categories, (category) => productService.getCategoryId(category));
     });
     productListController.loadProducts(false);
     bindTrashActionEvents(productController);
 }
 
-function initializeDashboardPage(productService, stockMovementService) {
-    const dashboardView = new StockMovementsView();
-    const dashboardController = new DashboardController(dashboardView, productService, stockMovementService, state);
+function initializeMovementPage(productService, stockMovementService) {
+    const movementView = new StockMovementsView();
+    const movementController = new MovementController(movementView, productService, stockMovementService, state);
 
-    document.getElementById('dashboard-product-select')?.addEventListener('change', function (event) {
-        dashboardController.setProductFilter(event.target.value);
+    movementView.bindSaleReferenceCopy(async function (saleReferenceId, button) {
+        try {
+            await navigator.clipboard.writeText(saleReferenceId);
+            movementView.showCopySuccess(button);
+        } catch (error) {
+            movementView.showCopyError(button);
+        }
     });
 
-    document.getElementById('dashboard-movement-type-select')?.addEventListener('change', function (event) {
-        dashboardController.setMovementTypeFilter(event.target.value);
+    document.getElementById('movement-product-select')?.addEventListener('change', function (event) {
+        movementController.setProductFilter(event.target.value);
     });
 
-    document.getElementById('dashboard-movement-search')?.addEventListener('input', function (event) {
+    document.getElementById('movement-type-select')?.addEventListener('change', function (event) {
+        movementController.setMovementTypeFilter(event.target.value);
+    });
+
+    document.getElementById('movement-search')?.addEventListener('input', function (event) {
         clearTimeout(movementSearchDebounceId);
         movementSearchDebounceId = window.setTimeout(function () {
-            dashboardController.setSearchTerm(event.target.value);
+            movementController.setSearchTerm(event.target.value);
         }, 250);
     });
 
-    dashboardController.initialize();
+    document.getElementById('btnToggleMovementFilters')?.addEventListener('click', function () {
+        movementView.toggleFilterPanel();
+    });
+
+    document.getElementById('btnToggleMovementFilters')?.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            movementView.toggleFilterPanel();
+        }
+    });
+
+    document.getElementById('movement-filter-apply')?.addEventListener('click', function () {
+        movementController.setAdvancedFilters(movementView.getAdvancedFilterValues());
+    });
+
+    document.getElementById('movement-filter-clear')?.addEventListener('click', function () {
+        movementController.clearFilters();
+    });
+
+    movementController.initialize();
 }
 
 function initializeCategoryPage(productService, categoryService) {
@@ -135,6 +181,109 @@ function initializeCategoryPage(productService, categoryService) {
     categoryController.initialize();
 }
 
+function initializeSalesPage(saleService) {
+    const saleListView = new SaleListView();
+    const saleDetailsView = new SaleDetailsView();
+    const saleListController = new SaleListController(saleListView, saleService, state, {
+        detailsView: saleDetailsView
+    });
+
+    const saleIdInput = document.getElementById('sales-filter-sale-id');
+    const startDateInput = document.getElementById('sales-filter-start-date');
+    const endDateInput = document.getElementById('sales-filter-end-date');
+    const minAmountInput = document.getElementById('sales-filter-min-amount');
+    const maxAmountInput = document.getElementById('sales-filter-max-amount');
+    const clearFiltersButton = document.getElementById('sales-filter-clear-button');
+    const todayButton = document.getElementById('sales-filter-today');
+    const last7Button = document.getElementById('sales-filter-last-7');
+    const monthButton = document.getElementById('sales-filter-month');
+
+    if (saleIdInput) {
+        saleIdInput.value = state.ui.salesSaleId || '';
+        saleIdInput.addEventListener('input', function (event) {
+            saleListController.setFilter('saleId', event.target.value.trim());
+        });
+    }
+
+    if (startDateInput) {
+        startDateInput.value = state.ui.salesStartDate || '';
+        startDateInput.addEventListener('change', function (event) {
+            saleListController.setFilter('startDate', event.target.value);
+        });
+    }
+
+    if (endDateInput) {
+        endDateInput.value = state.ui.salesEndDate || '';
+        endDateInput.addEventListener('change', function (event) {
+            saleListController.setFilter('endDate', event.target.value);
+        });
+    }
+
+    let amountDebounceId = null;
+    const amountInputHandler = function (filterName, value) {
+        clearTimeout(amountDebounceId);
+        amountDebounceId = window.setTimeout(function () {
+            saleListController.setFilter(filterName, value);
+        }, 250);
+    };
+
+    if (minAmountInput) {
+        minAmountInput.value = state.ui.salesMinAmount || '';
+        minAmountInput.addEventListener('input', function (event) {
+            amountInputHandler('minAmount', event.target.value);
+        });
+    }
+
+    if (maxAmountInput) {
+        maxAmountInput.value = state.ui.salesMaxAmount || '';
+        maxAmountInput.addEventListener('input', function (event) {
+            amountInputHandler('maxAmount', event.target.value);
+        });
+    }
+
+    clearFiltersButton?.addEventListener('click', function () {
+        if (saleIdInput) saleIdInput.value = '';
+        if (startDateInput) startDateInput.value = '';
+        if (endDateInput) endDateInput.value = '';
+        if (minAmountInput) minAmountInput.value = '';
+        if (maxAmountInput) maxAmountInput.value = '';
+        saleListController.clearFilters();
+    });
+
+    todayButton?.addEventListener('click', function () {
+        if (saleIdInput) saleIdInput.value = '';
+        saleListController.setQuickFilter('today');
+    });
+    last7Button?.addEventListener('click', function () {
+        if (saleIdInput) saleIdInput.value = '';
+        saleListController.setQuickFilter('last7');
+    });
+    monthButton?.addEventListener('click', function () {
+        if (saleIdInput) saleIdInput.value = '';
+        saleListController.setQuickFilter('month');
+    });
+
+    document.addEventListener('click', function (event) {
+        const detailsButton = event.target.closest('.btn-view-sale-details');
+        if (detailsButton) {
+            const row = detailsButton.closest('tr');
+            const saleId = row?.dataset.saleId;
+            if (saleId) {
+                saleListController.handleViewDetails(saleId);
+            }
+        }
+    });
+
+    saleListController.initialize();
+}
+
+function initializeSaleCreatePage(saleService, productService) {
+    const saleCreateView = new SaleCreateView();
+    const saleCreateController = new SaleCreateController(saleCreateView, saleService, productService, state);
+
+    saleCreateController.initialize();
+}
+
 function bindProductPageEvents(productListController, deletedProductListController, productController) {
     document.getElementById('btnAddProduct')?.addEventListener('click', function () {
         productController.openCreateModal();
@@ -146,6 +295,25 @@ function bindProductPageEvents(productListController, deletedProductListControll
 
     document.getElementById('btnAdjustPrice')?.addEventListener('click', function () {
         productController.openAdjustPriceModal();
+    });
+
+    document.getElementById('btnToggleProductFilters')?.addEventListener('click', function () {
+        productListController.view.toggleFilterPanel();
+    });
+
+    document.getElementById('btnToggleProductFilters')?.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            productListController.view.toggleFilterPanel();
+        }
+    });
+
+    document.getElementById('product-filter-apply')?.addEventListener('click', function () {
+        productListController.setAdvancedFilters(productListController.view.getAdvancedFilterValues());
+    });
+
+    document.getElementById('product-filter-clear')?.addEventListener('click', function () {
+        productListController.clearFilters();
     });
 
     document.getElementById('btnToggleTrash')?.addEventListener('click', function () {
@@ -165,10 +333,6 @@ function bindProductPageEvents(productListController, deletedProductListControll
         trashSearchDebounceId = window.setTimeout(function () {
             deletedProductListController.setSearchTerm(event.target.value);
         }, 250);
-    });
-
-    document.getElementById('category-filter')?.addEventListener('change', function (event) {
-        productListController.setCategoryId(event.target.value);
     });
 
     document.getElementById('addProductForm')?.addEventListener('submit', function (event) {
@@ -192,7 +356,7 @@ function bindProductPageEvents(productListController, deletedProductListControll
             const row = editButton.closest('tr');
             const productId = row?.dataset.productId;
             if (productId) {
-                productController.openAdjustPriceModal(productId);
+                productListController.handleEditAction(productId);
             }
         }
 
@@ -205,21 +369,29 @@ function bindProductPageEvents(productListController, deletedProductListControll
             }
         }
     });
-}
 
-function renderCategoryFilter(categories, productService) {
-    const categoryFilter = document.getElementById('category-filter');
-    if (!categoryFilter) {
-        return;
-    }
+    document.addEventListener('keydown', function (event) {
+        const input = event.target.closest('.product-name-edit-input');
+        if (!input) {
+            return;
+        }
 
-    categoryFilter.innerHTML = '<option value="">All Categories</option>';
+        const row = input.closest('tr');
+        const productId = row?.dataset.productId;
 
-    categories.forEach(function (category) {
-        const option = document.createElement('option');
-        option.value = productService.getCategoryId(category);
-        option.textContent = category.name ?? 'Unknown category';
-        categoryFilter.appendChild(option);
+        if (!productId) {
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            productListController.saveInlineName(productId);
+        }
+
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            productListController.cancelInlineEdit();
+        }
     });
 }
 

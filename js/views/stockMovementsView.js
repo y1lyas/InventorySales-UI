@@ -4,10 +4,11 @@ import { SearchableSelect } from '../utils/searchableSelect.js';
 
 export class StockMovementsView {
     constructor() {
-        this.productSelect = document.getElementById('dashboard-product-select');
-        this.movementTypeSelect = document.getElementById('dashboard-movement-type-select');
+        this.productSelect = document.getElementById('movement-product-select');
+        this.movementTypeSelect = document.getElementById('movement-type-select');
         this.productPicker = new SearchableSelect(this.productSelect, {
-            emptyText: 'No products match that search'
+            emptyText: 'No products match that search',
+            placeholder: 'Find by product',
         });
         this.tableBody = document.getElementById('stock-movement-table-body');
         this.loadingState = document.getElementById('stock-movement-loading');
@@ -19,6 +20,7 @@ export class StockMovementsView {
         this.tableView = document.getElementById('stock-movement-table');
         this.paginationContainer = document.getElementById('stock-movement-pagination-container');
         this.pagination = document.getElementById('stock-movement-pagination');
+        this.filterPanel = document.getElementById('movement-filter-panel');
     }
 
     renderProductOptions(products) {
@@ -58,10 +60,41 @@ export class StockMovementsView {
     }
 
     setSearchTerm(searchTerm) {
-        const searchInput = document.getElementById('dashboard-movement-search');
+        const searchInput = document.getElementById('movement-search');
         if (searchInput) {
             searchInput.value = searchTerm || '';
         }
+    }
+
+    toggleFilterPanel() {
+        this.filterPanel?.classList.toggle('d-none');
+    }
+
+    getAdvancedFilterValues() {
+        return {
+            movementReason: document.getElementById('movement-filter-reason')?.value || '',
+            startDate: document.getElementById('movement-filter-start-date')?.value || '',
+            endDate: document.getElementById('movement-filter-end-date')?.value || '',
+            minQuantity: document.getElementById('movement-filter-min-quantity')?.value || '',
+            maxQuantity: document.getElementById('movement-filter-max-quantity')?.value || ''
+        };
+    }
+
+    setAdvancedFilterValues(filters = {}) {
+        const values = {
+            'movement-filter-reason': filters.movementReason || '',
+            'movement-filter-start-date': filters.startDate || '',
+            'movement-filter-end-date': filters.endDate || '',
+            'movement-filter-min-quantity': filters.minQuantity || '',
+            'movement-filter-max-quantity': filters.maxQuantity || ''
+        };
+
+        Object.entries(values).forEach(([id, value]) => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.value = value;
+            }
+        });
     }
 
     showLoading() {
@@ -140,28 +173,64 @@ export class StockMovementsView {
             const movementDisplay = this.getMovementDisplay(movement.movementType);
             const productName = movement.productName || 'N/A';
             const sku = movement.productSku || 'N/A';
+            const saleReferenceId = movement.saleReferenceId;
+            const reason = this.getReasonLabel(movement.reason);
+            const relatedSaleAction = saleReferenceId
+                ? `
+                    <button
+                        type="button"
+                        class="btn btn-sm btn-light text-primary shadow-sm border-0 btn-copy-sale-reference"
+                        data-sale-reference-id="${this.escapeHtml(saleReferenceId)}"
+                        title="Copy sale ID"
+                        aria-label="Copy sale ID">
+                        <i class="bi bi-clipboard me-2"></i>Copy Sale ID
+                    </button>
+                `
+                : '-';
 
             return `
                 <tr>
                     <td class="px-4">
-                        <div class="fw-medium">${productName}</div>
-                        <div class="text-muted small">${sku}</div>
+                        <div class="fw-medium">${this.escapeHtml(productName)}</div>
+                        <div class="text-muted small">${this.escapeHtml(sku)}</div>
                     </td>
-                    <td class="text-muted small">${formattedDate}</td>
+                    <td>${this.escapeHtml(reason)}</td>
+                    <td class="text-muted small">${this.escapeHtml(formattedDate)}</td>
                     <td>
                         <span class="badge ${movementDisplay.badgeClass}">
-                            <i class="bi ${movementDisplay.iconClass} me-1"></i>${movementDisplay.label}
+                            <i class="bi ${movementDisplay.iconClass} me-1"></i>${this.escapeHtml(movementDisplay.label)}
                         </span>
                     </td>
-                    <td class="fw-semibold text-end px-4 ${movementDisplay.quantityClass}">${movementDisplay.sign}${quantity}</td>
+                    <td class="fw-semibold text-end px-4 ${movementDisplay.quantityClass}">${movementDisplay.sign}${this.escapeHtml(quantity)}</td>
+                    <td class="text-end px-4">
+                        ${relatedSaleAction}
+                    </td>
                 </tr>
             `;
         }).join('');
 
-        this.loadingState?.classList.add('d-none');
-        this.emptyState?.classList.add('d-none');
-        this.errorState?.classList.add('d-none');
-        this.tableView?.classList.remove('d-none');
+        if (this.loadingState) {
+            this.loadingState.classList.add('d-none');
+        }
+        if (this.emptyState) {
+            this.emptyState.classList.add('d-none');
+        }
+        if (this.errorState) {
+            this.errorState.classList.add('d-none');
+        }
+        if (this.tableView) {
+            this.tableView.classList.remove('d-none');
+        }
+    }
+
+    escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>'"]/g, (character) => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[character]));
     }
 
     getMovementDisplay(movementType) {
@@ -198,7 +267,67 @@ export class StockMovementsView {
         };
     }
 
+    getReasonLabel(reason) {
+        const normalized = String(reason ?? '').trim().toLowerCase();
+
+        if (normalized === '1' || normalized === 'sale') {
+            return 'Sale';
+        }
+
+        if (normalized === '2' || normalized === 'adjustment') {
+            return 'Adjustment';
+        }
+
+        if (normalized) {
+            return String(reason);
+        }
+
+        return 'N/A';
+    }
+
     renderPagination({ currentPage, totalPages }, onPageChange) {
         renderPagination(this.pagination, this.paginationContainer, { currentPage, totalPages }, onPageChange);
+    }
+
+    bindSaleReferenceCopy(onCopy) {
+        this.tableBody?.addEventListener('click', async (event) => {
+            const button = event.target.closest('.btn-copy-sale-reference');
+            if (!button) {
+                return;
+            }
+
+            await onCopy(button.dataset.saleReferenceId, button);
+        });
+    }
+
+    showCopySuccess(button) {
+        const icon = button.querySelector('i');
+        button.classList.remove('text-primary');
+        button.classList.add('text-success');
+        button.title = 'Copied';
+
+        if (icon) {
+            icon.className = 'bi bi-check2 me-2';
+        }
+
+        window.setTimeout(() => {
+            button.classList.remove('text-success');
+            button.classList.add('text-primary');
+            button.title = 'Copy sale ID';
+            if (icon) {
+                icon.className = 'bi bi-clipboard me-2';
+            }
+        }, 1200);
+    }
+
+    showCopyError(button) {
+        const icon = button.querySelector('i');
+        button.classList.remove('text-primary');
+        button.classList.add('text-danger');
+        button.title = 'Copy failed';
+
+        if (icon) {
+            icon.className = 'bi bi-exclamation-circle';
+        }
     }
 }

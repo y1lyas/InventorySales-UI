@@ -16,7 +16,7 @@ export function extractCollection(data, keys = []) {
     return [];
 }
 
-export function extractPagination(data, currentCount, currentPage, fallbackPageSize) {
+export function extractPagination(data, currentPage, fallbackPageSize) {
     const explicitTotalPages = typeof data?.totalPages === 'number'
         ? data.totalPages
         : typeof data?.pageCount === 'number'
@@ -34,7 +34,7 @@ export function extractPagination(data, currentCount, currentPage, fallbackPageS
         ? Math.max(1, explicitTotalPages)
         : totalItems !== null
             ? Math.max(1, Math.ceil(totalItems / pageSize))
-            : Math.max(1, Math.ceil(currentCount / pageSize));
+            : 1;
 
     return {
         currentPage: parseInt(data?.pageNumber ?? data?.currentPage ?? data?.page ?? currentPage, 10) || currentPage,

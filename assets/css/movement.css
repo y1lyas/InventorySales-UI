@@ -82,6 +82,83 @@ body {
     box-shadow: none;
 }
 
+.filter-panel .form-label {
+    font-weight: 600;
+    margin-bottom: 0.35rem;
+}
+
+.filter-panel .form-control,
+.filter-panel .form-select {
+    min-height: 2.45rem;
+}
+
+.filter-toggle-link {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 0.1rem;
+    color: rgba(75, 85, 99, 0.72);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+}
+
+.filter-toggle-link i {
+    color: rgba(75, 85, 99, 0.58);
+}
+
+.filter-toggle-link:hover,
+.filter-toggle-link:focus {
+    color: rgba(37, 99, 235, 0.82);
+    outline: none;
+}
+
+.filter-toggle-link:hover i,
+.filter-toggle-link:focus i {
+    color: rgba(37, 99, 235, 0.72);
+}
+
+.filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.55rem;
+}
+
+.filter-field {
+    flex: 0 1 8rem;
+    min-width: 7.25rem;
+}
+
+.filter-field-category {
+    flex-basis: 13rem;
+    min-width: 10rem;
+}
+
+.filter-field-select {
+    flex-basis: 10rem;
+    min-width: 8rem;
+}
+
+.filter-field-number {
+    flex-basis: 5.8rem;
+    min-width: 5.6rem;
+}
+
+.filter-field-date {
+    flex-basis: 10rem;
+    min-width: 7.8rem;
+}
+
+.filter-actions {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.5rem;
+    margin-left: auto;
+}
+
 .searchable-select-native {
     position: absolute;
     width: 1px;
@@ -162,6 +239,34 @@ body {
     padding: 0.65rem;
     color: #6b7280;
     font-size: 0.85rem;
+}
+
+.category-filter-control {
+    flex: 0 0 13rem;
+}
+
+.category-description-badge {
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1;
+    padding: 0.35rem 0.55rem;
+    cursor: pointer;
+}
+
+.category-description-badge:hover,
+.category-description-badge:focus {
+    background: #eff6ff !important;
+    color: var(--accent-color) !important;
+}
+
+.product-name-edit-input {
+    max-width: 18rem;
+    font-weight: 500;
+}
+
+.product-name-text {
+    min-height: 1.55rem;
 }
 
 #table-view,

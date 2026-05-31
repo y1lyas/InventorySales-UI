@@ -33,7 +33,26 @@ export class CategoryController {
     }
 
     render() {
-        this.view.renderCategories(this.state.categories, (category) => this.categoryService.getCategoryId(category));
+        const allCategories = this.state.categories;
+        const getCategoryId = (category) => this.categoryService.getCategoryId(category);
+        const pageSize = this.state.ui.categoriesPageSize;
+        const totalPages = Math.max(1, Math.ceil(allCategories.length / pageSize));
+        const currentPage = Math.min(Math.max(this.state.ui.categoriesPage, 1), totalPages);
+
+        this.state.ui.categoriesPage = currentPage;
+
+        const startIndex = (currentPage - 1) * pageSize;
+        const pageCategories = allCategories.slice(startIndex, startIndex + pageSize);
+
+        this.view.renderCategoryList(pageCategories, getCategoryId);
+        this.view.renderCategoryOptions(allCategories, getCategoryId);
+        this.view.assignCategoryPicker?.refreshOptions();
+
+        this.view.renderCategoryPagination({ currentPage, totalPages }, (nextPage) => {
+            this.state.ui.categoriesPage = nextPage;
+            this.render();
+        });
+
         this.view.renderProducts(this.state.products);
     }
 
@@ -50,6 +69,7 @@ export class CategoryController {
             await this.categoryService.createCategory(formData);
             this.view.resetCreateForm();
             await this.loadCategories();
+            this.state.ui.categoriesPage = 1;
             this.render();
             this.view.showSuccess('Category created successfully.');
         } catch (error) {

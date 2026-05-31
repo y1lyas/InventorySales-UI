@@ -10,21 +10,43 @@ export class StockMovementService {
         return this.extractStockMovements(data);
     }
 
-    async getAllStockMovements({ page = 1, size = 10, search = '', productId = '', movementType = '' } = {}) {
-        const data = await this.productApi.getAllStockMovements({ page, size, search, productId, movementType });
+    async getAllStockMovements({
+        page = 1,
+        size = 12,
+        search = '',
+        productId = '',
+        movementType = '',
+        movementReason = '',
+        startDate = '',
+        endDate = '',
+        minQuantity = '',
+        maxQuantity = ''
+    } = {}) {
+        const data = await this.productApi.getAllStockMovements({
+            page,
+            size,
+            search,
+            productId,
+            movementType,
+            movementReason,
+            startDate,
+            endDate,
+            minQuantity,
+            maxQuantity
+        });
         const movements = this.extractStockMovements(data);
 
         return {
             movements: movements,
-            pagination: this.extractPagination(data, movements.length, page, size)
+            pagination: this.extractPagination(data, page, size)
         };
     }
 
     extractStockMovements(data) {
-        return extractCollection(data, ['stockMovements', 'movements']);
+        return extractCollection(data, ['movements', 'stockMovements']);
     }
 
-    extractPagination(data, currentCount, currentPage, fallbackPageSize) {
-        return extractPagination(data, currentCount, currentPage, fallbackPageSize);
+    extractPagination(data, currentPage, fallbackPageSize) {
+        return extractPagination(data, currentPage, fallbackPageSize);
     }
 }
