@@ -86,8 +86,8 @@ export const productApi = {
 
         this.appendOptionalParams(params, {
             MovementReason: movementReason,
-            StartDate: startDate,
-            EndDate: endDate,
+            StartDate: this.formatDateFilterForApi(startDate),
+            EndDate: this.formatDateFilterForApi(endDate),
             MinQuantity: minQuantity,
             MaxQuantity: maxQuantity
         }, [
@@ -174,5 +174,24 @@ export const productApi = {
                 params.append(key, value);
             }
         });
+    },
+
+    formatDateFilterForApi(value) {
+        if (!value) {
+            return '';
+        }
+
+        const normalizedValue = String(value).trim();
+        if (!normalizedValue) {
+            return '';
+        }
+
+        const dateOnlyMatch = normalizedValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (dateOnlyMatch) {
+            const [, year, month, day] = dateOnlyMatch;
+            return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))).toISOString();
+        }
+
+        return normalizedValue;
     }
 };
