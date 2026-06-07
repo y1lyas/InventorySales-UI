@@ -38,6 +38,11 @@ export class ProductListView {
         this.emptyState?.classList.add('d-none');
     }
 
+    setTableBusy(isBusy) {
+        this.setBusyStyles(this.tableView, isBusy);
+        this.setPaginationBusy(isBusy);
+    }
+
     showEmptyState(options = {}) {
         const {
             icon = 'bi-box-seam',
@@ -264,6 +269,23 @@ export class ProductListView {
 
     renderPagination({ currentPage, totalPages }, onPageChange) {
         renderPagination(this.pagination, this.paginationContainer, { currentPage, totalPages }, onPageChange);
+    }
+
+    setBusyStyles(element, isBusy) {
+        if (!element) return;
+
+        element.style.opacity = isBusy ? '0.65' : '';
+        element.style.pointerEvents = isBusy ? 'none' : '';
+        element.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    }
+
+    setPaginationBusy(isBusy) {
+        this.pagination?.querySelectorAll('.page-link').forEach((link) => {
+            link.classList.toggle('disabled', isBusy);
+            link.setAttribute('aria-disabled', isBusy ? 'true' : 'false');
+            link.style.pointerEvents = isBusy ? 'none' : '';
+            link.tabIndex = isBusy ? -1 : 0;
+        });
     }
 
     bindCategoryDescriptionBadges() {

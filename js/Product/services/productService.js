@@ -6,18 +6,32 @@ export class ProductService {
         this.pageSize = pageSize || 10;
     }
 
+    async getProductsPage({ page = 1, size = this.pageSize, isDeleted = false, categoryId = '', searchTerm = '', filters = {} } = {}) {
+        const data = await this.productApi.getAll(page, size, searchTerm, isDeleted, categoryId, filters);
+
+        return {
+            products: this.extractProducts(data),
+            pagination: this.calculatePaginationInfo(data, page, size)
+        };
+    }
+
     async getAllProducts({ isDeleted = false, categoryId = '', searchTerm = '', filters = {} } = {}) {
         const allProducts = [];
         let page = 1;
         let totalPages = 1;
 
         do {
-            const data = await this.productApi.getAll(page, 100, searchTerm, isDeleted, categoryId, filters);
-            const products = this.extractProducts(data);
-            const pagination = this.calculatePaginationInfo(data, page, 100);
+            const result = await this.getProductsPage({
+                page,
+                size: 100,
+                isDeleted,
+                categoryId,
+                searchTerm,
+                filters
+            });
 
-            allProducts.push(...products);
-            totalPages = pagination.totalPages;
+            allProducts.push(...result.products);
+            totalPages = result.pagination.totalPages;
             page += 1;
         } while (page <= totalPages);
 
@@ -188,20 +202,6 @@ export class ProductService {
         }
 
         return date.getTime();
-    }
-
-    paginateProducts(products, currentPage) {
-        const totalPages = Math.max(1, Math.ceil(products.length / this.pageSize));
-        const safePage = Math.min(Math.max(currentPage, 1), totalPages);
-        const startIndex = (safePage - 1) * this.pageSize;
-
-        return {
-            products: products.slice(startIndex, startIndex + this.pageSize),
-            pagination: {
-                currentPage: safePage,
-                totalPages: totalPages
-            }
-        };
     }
 
     normalizeCreatedProduct(createdProduct, payload, categories) {

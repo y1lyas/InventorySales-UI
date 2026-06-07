@@ -1,4 +1,5 @@
 import { renderPagination } from '../../utils/pagination.js';
+import { getProductId } from '../../utils/productDisplay.js';
 
 export class SaleCreateView {
     constructor() {
@@ -17,6 +18,11 @@ export class SaleCreateView {
         this.productTable?.classList.remove('d-none');
     }
 
+    setTableBusy(isBusy) {
+        this.setBusyStyles(this.productTable, isBusy);
+        this.setPaginationBusy(isBusy);
+    }
+
     renderProductList(products) {
         if (!this.productTableBody) return;
 
@@ -30,10 +36,11 @@ export class SaleCreateView {
         }
 
         this.productTableBody.innerHTML = products.map((product) => {
+            const productId = getProductId(product);
             const price = Number(product.unitPrice ?? product.price ?? 0).toFixed(2);
             const stockQuantity = product.currentStock ?? product.stock ?? 0;
             return `
-                <tr data-product-id="${this.escapeHtml(product.id)}">
+                <tr data-product-id="${this.escapeHtml(productId)}">
                     <td>
                         <div class="fw-semibold">${this.escapeHtml(product.name)}</div>
                         <div class="text-muted small">${this.escapeHtml(product.sku || product.skUnit || 'N/A')}</div>
@@ -53,6 +60,23 @@ export class SaleCreateView {
 
     renderPagination({ currentPage, totalPages }, onPageChange) {
         renderPagination(this.pagination, this.paginationContainer, { currentPage, totalPages }, onPageChange);
+    }
+
+    setBusyStyles(element, isBusy) {
+        if (!element) return;
+
+        element.style.opacity = isBusy ? '0.65' : '';
+        element.style.pointerEvents = isBusy ? 'none' : '';
+        element.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    }
+
+    setPaginationBusy(isBusy) {
+        this.pagination?.querySelectorAll('.page-link').forEach((link) => {
+            link.classList.toggle('disabled', isBusy);
+            link.setAttribute('aria-disabled', isBusy ? 'true' : 'false');
+            link.style.pointerEvents = isBusy ? 'none' : '';
+            link.tabIndex = isBusy ? -1 : 0;
+        });
     }
 
     renderCart(items) {

@@ -11,6 +11,8 @@ export class SaleListController {
             maxAmount: this.state.ui.salesMaxAmount || '',
             saleId: this.state.ui.salesSaleId || ''
         };
+        this.busyTimerId = null;
+        this.detailsBusyTimerId = null;
     }
 
     async initialize() {
@@ -28,7 +30,7 @@ export class SaleListController {
         }
 
         this.state.ui.isLoadingSales = true;
-        this.view.showLoading();
+        this.startLoadingFeedback(this.state.sales?.length > 0);
 
         try {
             if (this.filters.saleId) {
@@ -60,6 +62,7 @@ export class SaleListController {
         } catch (error) {
             this.view.showError(error.message || 'Unable to load sales');
         } finally {
+            this.stopLoadingFeedback();
             this.state.ui.isLoadingSales = false;
             this.render();
         }
@@ -171,7 +174,7 @@ export class SaleListController {
             return;
         }
 
-        this.detailsView.showLoading();
+        this.startDetailsLoadingFeedback(this.detailsView.hasVisibleDetails?.() === true);
 
         try {
             const saleDetail = await this.saleService.getSaleById(saleId);
@@ -183,6 +186,8 @@ export class SaleListController {
             this.detailsView.renderSaleDetails(saleDetail);
         } catch (error) {
             this.detailsView.showError(error.message || 'Unable to load sale details');
+        } finally {
+            this.stopDetailsLoadingFeedback();
         }
     }
 
@@ -193,5 +198,50 @@ export class SaleListController {
     getInitialSaleId() {
         const params = new URLSearchParams(window.location.search);
         return params.get('saleId') || params.get('viewSaleId');
+    }
+
+    startLoadingFeedback(hasVisibleRows) {
+        this.stopLoadingFeedback();
+
+        if (!hasVisibleRows) {
+            this.view.showLoading();
+            return;
+        }
+
+        this.busyTimerId = window.setTimeout(() => {
+            this.view.setTableBusy?.(true);
+        }, 200);
+    }
+
+    stopLoadingFeedback() {
+        if (this.busyTimerId) {
+            window.clearTimeout(this.busyTimerId);
+            this.busyTimerId = null;
+        }
+
+        this.view.setTableBusy?.(false);
+    }
+
+    startDetailsLoadingFeedback(hasVisibleDetails) {
+        this.stopDetailsLoadingFeedback();
+
+        if (!hasVisibleDetails) {
+            this.detailsView.showLoading();
+            return;
+        }
+
+        this.detailsView.showModal();
+        this.detailsBusyTimerId = window.setTimeout(() => {
+            this.detailsView.setDetailsBusy?.(true);
+        }, 200);
+    }
+
+    stopDetailsLoadingFeedback() {
+        if (this.detailsBusyTimerId) {
+            window.clearTimeout(this.detailsBusyTimerId);
+            this.detailsBusyTimerId = null;
+        }
+
+        this.detailsView?.setDetailsBusy?.(false);
     }
 }

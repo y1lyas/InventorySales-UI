@@ -7,12 +7,15 @@ export class ProductListController {
         this.onCreateProduct = options?.onCreateProduct || null;
         this.onUpdateProductName = options?.onUpdateProductName || null;
         this.editingProductId = null;
+        this.busyTimerId = null;
     }
     
     async loadProducts(forceReload = false) {
         const stateKey = this.getStateKey();
         const loadingKey = this.getLoadingKey();
         const loadedKey = this.getLoadedKey();
+        const pageKey = this.getPageKey();
+        const paginationKey = this.getPaginationKey();
 
         if (!forceReload && this.state.loaded[loadedKey]) {
             this.render();
@@ -20,19 +23,31 @@ export class ProductListController {
         }
 
         this.state.ui[loadingKey] = true;
-        this.view.showLoading();
+        this.startLoadingFeedback(this.state[stateKey]?.length > 0);
 
         try {
-            this.state[stateKey] = await this.productService.getAllProducts({
+            const result = await this.productService.getProductsPage({
+                page: this.state.ui[pageKey],
+                size: this.state.ui.pageSize,
                 isDeleted: this.isDeletedList,
                 categoryId: this.isDeletedList ? '' : this.state.ui.productCategoryId,
                 searchTerm: this.isDeletedList ? this.state.ui.trashSearchTerm : this.state.ui.productSearchTerm,
                 filters: this.isDeletedList ? {} : this.getAdvancedFilters()
             });
+
+            if (!result.products.length && this.state.ui[pageKey] > 1) {
+                this.state.ui[pageKey] = 1;
+                return await this.loadProducts(true);
+            }
+
+            this.state[stateKey] = result.products;
+            this.state[paginationKey] = result.pagination;
+            this.state.ui[pageKey] = result.pagination.currentPage;
             this.state.loaded[loadedKey] = true;
         } catch (error) {
             this.view.showError(error.message || 'Unable to load products');
         } finally {
+            this.stopLoadingFeedback();
             this.state.ui[loadingKey] = false;
             this.render();
         }
@@ -44,24 +59,21 @@ export class ProductListController {
             return;
         }
 
-        const filteredProducts = this.getFilteredProducts();
-        const pageKey = this.getPageKey();
-        const pageData = this.productService.paginateProducts(filteredProducts, this.state.ui[pageKey]);
+        const products = this.state[this.getStateKey()];
+        const pagination = this.state[this.getPaginationKey()];
 
-        this.state.ui[pageKey] = pageData.pagination.currentPage;
-
-        if (!filteredProducts.length) {
+        if (!products.length) {
             this.view.showEmptyState(this.getEmptyStateOptions());
             return;
         }
 
-        this.view.renderProducts(pageData.products, {
+        this.view.renderProducts(products, {
             editingProductId: this.isDeletedList ? null : this.editingProductId
         });
-        this.view.renderPagination(pageData.pagination, (nextPage) => {
-            this.state.ui[pageKey] = nextPage;
+        this.view.renderPagination(pagination, (nextPage) => {
+            this.state.ui[this.getPageKey()] = nextPage;
             this.editingProductId = null;
-            this.render();
+            this.loadProducts(true);
         });
         this.view.showTable();
     }
@@ -106,7 +118,7 @@ export class ProductListController {
         this.render();
     }
 
-    setSearchTerm(searchTerm) {
+    async setSearchTerm(searchTerm) {
         if (this.isDeletedList) {
             this.state.ui.trashSearchTerm = String(searchTerm || '').trim();
             this.state.ui.trashPage = 1;
@@ -115,17 +127,19 @@ export class ProductListController {
             this.state.ui.productsPage = 1;
         }
 
-        this.render();
+        this.state.loaded[this.getLoadedKey()] = false;
+        await this.loadProducts(true);
     }
 
-    setCategoryId(categoryId) {
+    async setCategoryId(categoryId) {
         if (this.isDeletedList) {
             return;
         }
 
         this.state.ui.productCategoryId = categoryId || '';
         this.state.ui.productsPage = 1;
-        this.render();
+        this.state.loaded.products = false;
+        await this.loadProducts(true);
     }
 
     clearSearch() {
@@ -194,14 +208,6 @@ export class ProductListController {
         return Object.values(this.getAdvancedFilters()).some((value) => value !== '');
     }
 
-    getFilteredProducts() {
-        return this.productService.filterProducts(this.state[this.getStateKey()], {
-            searchTerm: this.isDeletedList ? this.state.ui.trashSearchTerm : this.state.ui.productSearchTerm,
-            categoryId: this.isDeletedList ? '' : this.state.ui.productCategoryId,
-            ...(this.isDeletedList ? {} : this.getAdvancedFilters())
-        });
-    }
-
     getEmptyStateOptions() {
         if (this.isDeletedList) {
             if (this.state.ui.trashSearchTerm) {
@@ -252,5 +258,31 @@ export class ProductListController {
 
     getPageKey() {
         return this.isDeletedList ? 'trashPage' : 'productsPage';
+    }
+
+    getPaginationKey() {
+        return this.isDeletedList ? 'deletedProductPagination' : 'productPagination';
+    }
+
+    startLoadingFeedback(hasVisibleRows) {
+        this.stopLoadingFeedback();
+
+        if (!hasVisibleRows) {
+            this.view.showLoading();
+            return;
+        }
+
+        this.busyTimerId = window.setTimeout(() => {
+            this.view.setTableBusy?.(true);
+        }, 200);
+    }
+
+    stopLoadingFeedback() {
+        if (this.busyTimerId) {
+            window.clearTimeout(this.busyTimerId);
+            this.busyTimerId = null;
+        }
+
+        this.view.setTableBusy?.(false);
     }
 }

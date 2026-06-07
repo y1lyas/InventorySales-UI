@@ -1,4 +1,5 @@
 import { Toast } from '../../utils/toast.js';
+import { getProductId } from '../../utils/productDisplay.js';
 
 export class SaleCreateController {
     constructor(view, saleService, productService, state) {
@@ -10,6 +11,11 @@ export class SaleCreateController {
         this.cartItems = [];
         this.currentPage = this.state.ui.saleCreatePage || 1;
         this.searchTerm = this.state.ui.saleCreateSearchTerm || '';
+        this.pagination = {
+            currentPage: this.currentPage,
+            totalPages: 1
+        };
+        this.busyTimerId = null;
     }
 
     async initialize() {
@@ -65,17 +71,37 @@ export class SaleCreateController {
     }
 
     async loadProducts() {
+        this.startLoadingFeedback(this.products.length > 0);
+
         try {
-            this.products = await this.productService.getAllProducts({ isDeleted: false });
+            const result = await this.productService.getProductsPage({
+                page: this.currentPage,
+                size: this.state.ui.saleCreatePageSize || this.state.ui.pageSize,
+                isDeleted: false,
+                searchTerm: this.searchTerm
+            });
+
+            if (!result.products.length && this.currentPage > 1) {
+                this.currentPage = 1;
+                this.state.ui.saleCreatePage = 1;
+                return await this.loadProducts();
+            }
+
+            this.products = result.products;
+            this.pagination = result.pagination;
+            this.currentPage = result.pagination.currentPage;
+            this.state.ui.saleCreatePage = this.currentPage;
             this.renderProductSelection();
             this.view.showProductTable();
         } catch (error) {
             this.view.showError(error.message || 'Unable to load products');
+        } finally {
+            this.stopLoadingFeedback();
         }
     }
 
     handleAddToCart(productId) {
-        const product = this.products.find((item) => String(item.id) === String(productId));
+        const product = this.products.find((item) => String(getProductId(item)) === String(productId));
         if (!product) {
             this.view.showError('Selected product could not be found.');
             return;
@@ -139,28 +165,20 @@ export class SaleCreateController {
         this.view.clearError();
     }
 
-    setSearchTerm(searchTerm) {
+    async setSearchTerm(searchTerm) {
         this.searchTerm = String(searchTerm || '').trim();
         this.state.ui.saleCreateSearchTerm = this.searchTerm;
         this.state.ui.saleCreatePage = 1;
         this.currentPage = 1;
-        this.renderProductSelection();
+        await this.loadProducts();
     }
 
     renderProductSelection() {
-        const filteredProducts = this.productService.filterProducts(this.products, {
-            searchTerm: this.searchTerm
-        });
-
-        const pageData = this.productService.paginateProducts(filteredProducts, this.currentPage);
-        this.currentPage = pageData.pagination.currentPage;
-        this.state.ui.saleCreatePage = this.currentPage;
-
-        this.view.renderProductList(pageData.products);
-        this.view.renderPagination(pageData.pagination, (nextPage) => {
+        this.view.renderProductList(this.products);
+        this.view.renderPagination(this.pagination, (nextPage) => {
             this.currentPage = nextPage;
             this.state.ui.saleCreatePage = nextPage;
-            this.renderProductSelection();
+            this.loadProducts();
         });
     }
 
@@ -182,6 +200,7 @@ export class SaleCreateController {
             Toast.show('Sale created successfully.', 'success');
             this.cartItems = [];
             this.view.renderCart(this.cartItems);
+            await this.loadProducts();
         } catch (error) {
             this.view.showError(error.message || 'Failed to create sale.');
         }
@@ -195,5 +214,26 @@ export class SaleCreateController {
             '"': '&quot;',
             "'": '&#039;'
         }[character]));
+    }
+
+    startLoadingFeedback(hasVisibleRows) {
+        this.stopLoadingFeedback();
+
+        if (!hasVisibleRows) {
+            return;
+        }
+
+        this.busyTimerId = window.setTimeout(() => {
+            this.view.setTableBusy?.(true);
+        }, 200);
+    }
+
+    stopLoadingFeedback() {
+        if (this.busyTimerId) {
+            window.clearTimeout(this.busyTimerId);
+            this.busyTimerId = null;
+        }
+
+        this.view.setTableBusy?.(false);
     }
 }

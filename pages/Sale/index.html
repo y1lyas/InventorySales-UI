@@ -60,12 +60,14 @@
                             <span class="input-group-text bg-white border-end-0">Max</span>
                             <input type="number" id="sales-filter-max-amount" class="form-control border-start-0 ps-0" min="0" placeholder="TRY">
                         </div>
-                        <button id="sales-filter-clear-button" type="button" class="btn btn-white bg-white border shadow-sm">Clear</button>
                          <div class="d-flex flex-wrap gap-2">
+                            <div class="input-group">
                         <button id="sales-filter-today" type="button" class="btn btn-white bg-white border shadow-sm">Today</button>
                         <button id="sales-filter-last-7" type="button" class="btn btn-white bg-white border shadow-sm">Last 7 Days</button>
                         <button id="sales-filter-month" type="button" class="btn btn-white bg-white border shadow-sm">This Month</button>
+                        </div>
                     </div>
+                    <button id="sales-filter-clear-button" type="button" class="btn btn-white bg-white border shadow-sm">Clear</button>
                     </div>
                 </div>
                 <div id="sales-active-filters" class="d-flex flex-wrap gap-2 mt-3"></div>
@@ -118,8 +120,8 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
-                <div id="sale-details-loading" class="text-center py-4">
-                    <div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div>
+                <div id="sale-details-loading" class="text-center py-4 spinner">
+                    <div class="spinner-border mb-4 p-4" role="status"><span class="visually-hidden">Loading...</span></div>
                 </div>
                 <div id="sale-details-error" class="alert alert-danger d-none" role="alert"></div>
                 <div id="sale-details-content" class="d-none">

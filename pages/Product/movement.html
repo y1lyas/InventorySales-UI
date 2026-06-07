@@ -42,16 +42,11 @@
                     <input type="search" id="movement-search" class="form-control border-start-0 ps-0" placeholder="Search movements by name or SKU">
                 </div>
             </div>
-            <div style="min-width: 240px; max-width: 420px;">
-                <select id="movement-product-select" class="form-select searchable-select-native">
-                    <option value="">All products</option>
-                </select>
-            </div>
             <span id="btnToggleMovementFilters" class="filter-toggle-link" role="button" tabindex="0">
                 <i class="bi bi-sort-up me-1 " style="font-size: 20px;"></i>Filters
             </span>
         </section>
-
+            <!-- Filter Panel -->
         <section id="movement-filter-panel" class="filter-panel card card-custom mb-4 d-none">
             <div class="card-body p-3">
                 <div class="filter-row">
@@ -87,6 +82,12 @@
                         <label for="movement-filter-max-quantity" class="form-label small text-muted">Max Quantity</label>
                         <input type="number" min="0" step="1" id="movement-filter-max-quantity" class="form-control" inputmode="numeric">
                     </div>
+                     <div class="filter-field filter-field-search">
+                    <label for="movement-filter-reason" class="form-label small text-muted">Product</label>
+                <select id="movement-product-select" class="form-select searchable-select-native">
+                    <option value="">All products</option>
+                </select>
+            </div>
                     <div class="filter-actions">
                         <button id="movement-filter-clear" type="button" class="btn btn-white bg-white border shadow-sm">Clear</button>
                         <button id="movement-filter-apply" type="button" class="btn btn-primary">Apply</button>

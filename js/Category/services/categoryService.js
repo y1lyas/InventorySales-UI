@@ -1,14 +1,35 @@
-import { extractCollection } from '../../utils/apiResponse.js';
+import { extractCollection, extractPagination } from '../../utils/apiResponse.js';
 
 
 export class CategoryService {
-    constructor(categoryApi) {
+    constructor(categoryApi, pageSize = 10) {
         this.categoryApi = categoryApi;
+        this.pageSize = pageSize;
     }
 
-    async getCategories() {
-        const data = await this.categoryApi.getAll();
-        return extractCollection(data);
+    async getCategories({ page = 1, size = this.pageSize } = {}) {
+        const data = await this.categoryApi.getAll(page, size);
+
+        return {
+            categories: extractCollection(data, ['categories']),
+            pagination: extractPagination(data, page, size)
+        };
+    }
+
+    async getAllCategories() {
+        const allCategories = [];
+        let page = 1;
+        let totalPages = 1;
+        const size = 100;
+
+        do {
+            const result = await this.getCategories({ page, size });
+            allCategories.push(...result.categories);
+            totalPages = result.pagination.totalPages;
+            page += 1;
+        } while (page <= totalPages);
+
+        return allCategories;
     }
 
     async createCategory(data) {

@@ -4,6 +4,7 @@ export class CategoryController {
         this.categoryService = categoryService;
         this.productService = productService;
         this.state = state;
+        this.busyTimerId = null;
     }
 
     async initialize() {
@@ -22,9 +23,31 @@ export class CategoryController {
         }
     }
 
-    async loadCategories() {
-        this.state.categories = await this.categoryService.getCategories();
-        this.state.loaded.categories = true;
+    async loadCategories(showBusyFeedback = false) {
+        if (showBusyFeedback) {
+            this.startLoadingFeedback(this.state.categories?.length > 0);
+        }
+
+        try {
+            const result = await this.categoryService.getCategories({
+                page: this.state.ui.categoriesPage,
+                size: this.state.ui.categoriesPageSize
+            });
+
+            if (!result.categories.length && this.state.ui.categoriesPage > 1) {
+                this.state.ui.categoriesPage = 1;
+                return await this.loadCategories();
+            }
+
+            this.state.categories = result.categories;
+            this.state.categoriesPagination = result.pagination;
+            this.state.ui.categoriesPage = result.pagination.currentPage;
+            this.state.loaded.categories = true;
+        } finally {
+            if (showBusyFeedback) {
+                this.stopLoadingFeedback();
+            }
+        }
     }
 
     async loadProducts() {
@@ -35,22 +58,14 @@ export class CategoryController {
     render() {
         const allCategories = this.state.categories;
         const getCategoryId = (category) => this.categoryService.getCategoryId(category);
-        const pageSize = this.state.ui.categoriesPageSize;
-        const totalPages = Math.max(1, Math.ceil(allCategories.length / pageSize));
-        const currentPage = Math.min(Math.max(this.state.ui.categoriesPage, 1), totalPages);
 
-        this.state.ui.categoriesPage = currentPage;
-
-        const startIndex = (currentPage - 1) * pageSize;
-        const pageCategories = allCategories.slice(startIndex, startIndex + pageSize);
-
-        this.view.renderCategoryList(pageCategories, getCategoryId);
+        this.view.renderCategoryList(allCategories, getCategoryId);
         this.view.renderCategoryOptions(allCategories, getCategoryId);
         this.view.assignCategoryPicker?.refreshOptions();
 
-        this.view.renderCategoryPagination({ currentPage, totalPages }, (nextPage) => {
+        this.view.renderCategoryPagination(this.state.categoriesPagination, (nextPage) => {
             this.state.ui.categoriesPage = nextPage;
-            this.render();
+            this.loadCategories(true).then(() => this.render());
         });
 
         this.view.renderProducts(this.state.products);
@@ -68,8 +83,9 @@ export class CategoryController {
         try {
             await this.categoryService.createCategory(formData);
             this.view.resetCreateForm();
-            await this.loadCategories();
             this.state.ui.categoriesPage = 1;
+            this.state.loaded.allCategories = false;
+            await this.loadCategories();
             this.render();
             this.view.showSuccess('Category created successfully.');
         } catch (error) {
@@ -115,5 +131,26 @@ export class CategoryController {
         } catch (error) {
             this.view.showError(error.message || 'Failed to unassign category');
         }
+    }
+
+    startLoadingFeedback(hasVisibleRows) {
+        this.stopLoadingFeedback();
+
+        if (!hasVisibleRows) {
+            return;
+        }
+
+        this.busyTimerId = window.setTimeout(() => {
+            this.view.setTableBusy?.(true);
+        }, 200);
+    }
+
+    stopLoadingFeedback() {
+        if (this.busyTimerId) {
+            window.clearTimeout(this.busyTimerId);
+            this.busyTimerId = null;
+        }
+
+        this.view.setTableBusy?.(false);
     }
 }

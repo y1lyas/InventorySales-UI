@@ -21,14 +21,15 @@ export class ProductController {
     }
 
     async loadCategories() {
-        if (this.state.loaded.categories) {
+        if (this.state.loaded.allCategories) {
             this.view.renderCategories(this.state.categories);
             return;
         }
 
         try {
-            this.state.categories = await this.categoryService.getCategories();
+            this.state.categories = await this.categoryService.getAllCategories();
             this.state.loaded.categories = true;
+            this.state.loaded.allCategories = true;
             this.view.renderCategories(this.state.categories);
         } catch (error) {
             this.view.showCategoryError(error.message || 'Failed to load categories');
@@ -56,9 +57,9 @@ export class ProductController {
             const normalizedProduct = this.productService.normalizeCreatedProduct(createdProduct, payload, this.state.categories);
          
 
-            this.state.products.unshift(normalizedProduct);
             this.state.movement.products.unshift(normalizedProduct);
             this.state.ui.productsPage = 1;
+            this.state.loaded.products = false;
 
             this.view.resetForm();
             this.view.hide();
@@ -86,6 +87,8 @@ export class ProductController {
         try {
             await this.productService.deleteProduct(productId);
             this.moveProductToDeletedState(productId);
+            this.state.loaded.products = false;
+            this.state.loaded.deletedProducts = false;
             this.feedbackView.showSuccess('Product deleted successfully!');
 
 
@@ -97,18 +100,28 @@ export class ProductController {
         }
     }
 
-    openAdjustStockModal() {
-        this.stockAdjustmentView?.show(this.state.products);
+    async openAdjustStockModal() {
+        try {
+            const products = await this.getProductOptions();
+            this.stockAdjustmentView?.show(products);
+        } catch (error) {
+            this.feedbackView.showActionError(error.message || 'Failed to load products');
+        }
     }
 
-    openAdjustPriceModal(productId = '') {
-        const product = productId ? this.findProductById(productId) : null;
-        if (productId && !product) {
-            this.feedbackView.showActionError('Product not found');
-            return;
-        }
+    async openAdjustPriceModal(productId = '') {
+        try {
+            const products = await this.getProductOptions();
+            const product = productId ? this.findProductById(productId) : null;
+            if (productId && !product) {
+                this.feedbackView.showActionError('Product not found');
+                return;
+            }
 
-        this.priceAdjustmentView?.show(this.state.products, product);
+            this.priceAdjustmentView?.show(products, product);
+        } catch (error) {
+            this.feedbackView.showActionError(error.message || 'Failed to load products');
+        }
     }
 
     async handleStockAdjustmentSubmit() {
@@ -235,7 +248,16 @@ export class ProductController {
     }
 
     findProductById(productId) {
-        return this.state.products.find((product) => String(getProductId(product)) === String(productId)) || null;
+        return [...this.state.products, ...this.state.movement.products]
+            .find((product) => String(getProductId(product)) === String(productId)) || null;
+    }
+
+    async getProductOptions() {
+        if (!this.state.movement.products.length) {
+            this.state.movement.products = await this.productService.getAllProducts({ isDeleted: false });
+        }
+
+        return this.state.movement.products;
     }
 
     updateProductStock(productId, quantityChange) {

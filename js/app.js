@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 
 function initializeApp() {
     const productService = new ProductService(productApi, state.ui.pageSize);
-    const categoryService = new CategoryService(categoryApi);
+    const categoryService = new CategoryService(categoryApi, state.ui.categoriesPageSize);
     const stockMovementService = new StockMovementService(productApi);
     const saleService = new SaleService(salesApi, state.ui.salesPageSize);
 
@@ -83,12 +83,14 @@ function initializeProductsPage(productService, categoryService) {
     });
 
     productController.onProductCreated = function () {
-        productListController.render();
+        productListController.loadProducts(true);
     };
 
     productController.onProductDeleted = function () {
-        productListController.render();
-        deletedProductListController.render();
+        productListController.loadProducts(true);
+        if (state.loaded.deletedProducts) {
+            deletedProductListController.loadProducts(true);
+        }
     };
 
     productController.onStockAdjusted = function () {

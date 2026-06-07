@@ -46,6 +46,11 @@ export class CategoryView {
         this.content?.classList.remove('d-none');
     }
 
+    setTableBusy(isBusy) {
+        this.setBusyStyles(this.categoryList, isBusy);
+        this.setPaginationBusy(isBusy);
+    }
+
     renderCategories(categories, getCategoryId) {
         if (this.categoryList) {
             this.categoryList.innerHTML = categories.length
@@ -157,5 +162,22 @@ export class CategoryView {
         this.alertContainer.className = `alert alert-${type}`;
         this.alertContainer.textContent = message;
         this.alertContainer.classList.remove('d-none');
+    }
+
+    setBusyStyles(element, isBusy) {
+        if (!element) return;
+
+        element.style.opacity = isBusy ? '0.65' : '';
+        element.style.pointerEvents = isBusy ? 'none' : '';
+        element.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    }
+
+    setPaginationBusy(isBusy) {
+        this.pagination?.querySelectorAll('.page-link').forEach((link) => {
+            link.classList.toggle('disabled', isBusy);
+            link.setAttribute('aria-disabled', isBusy ? 'true' : 'false');
+            link.style.pointerEvents = isBusy ? 'none' : '';
+            link.tabIndex = isBusy ? -1 : 0;
+        });
     }
 }

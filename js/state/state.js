@@ -2,10 +2,23 @@ export const state = {
     products: [],
     deletedProducts: [],
     categories: [],
+    productPagination: {
+        currentPage: 1,
+        totalPages: 1
+    },
+    deletedProductPagination: {
+        currentPage: 1,
+        totalPages: 1
+    },
+    categoriesPagination: {
+        currentPage: 1,
+        totalPages: 1
+    },
     loaded: {
         products: false,
         deletedProducts: false,
         categories: false,
+        allCategories: false,
         movementProducts: false,
         sales: false
     },
@@ -46,12 +59,13 @@ export const state = {
         categoriesPageSize: 6,
         salesPage: 1,
         salesPageSize: 12,
+        saleCreatePage: 1,
+        saleCreatePageSize: 12,
         salesStartDate: '',
         salesEndDate: '',
         salesMinAmount: '',
         salesMaxAmount: '',
         salesSaleId: '',
-        saleCreatePage: 1,
         saleCreateSearchTerm: '',
         productSearchTerm: '',
         trashSearchTerm: '',

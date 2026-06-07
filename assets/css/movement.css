@@ -141,6 +141,10 @@ body {
     flex-basis: 10rem;
     min-width: 8rem;
 }
+.filter-field-search {
+    flex-basis: 13rem;
+    min-width:10rem;
+}
 
 .filter-field-number {
     flex-basis: 5.8rem;

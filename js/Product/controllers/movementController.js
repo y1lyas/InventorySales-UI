@@ -5,6 +5,7 @@ export class MovementController {
         this.stockMovementService = stockMovementService;
         this.state = state;
         this.stockMovementsRequestId = 0;
+        this.busyTimerId = null;
     }
 
     async initialize() {
@@ -43,7 +44,7 @@ export class MovementController {
             maxQuantity: this.state.movement.movementMaxQuantity
         };
 
-        this.view.showLoading();
+        this.startLoadingFeedback(this.state.movement.stockMovements?.length > 0);
 
         try {
             const movements = await this.stockMovementService.getAllStockMovements(requestOptions);
@@ -74,6 +75,10 @@ export class MovementController {
 
             this.state.movement.stockMovements = [];
             this.view.showError(error.message || 'Unable to load stock movements');
+        } finally {
+            if (requestId === this.stockMovementsRequestId) {
+                this.stopLoadingFeedback();
+            }
         }
     }
 
@@ -170,5 +175,27 @@ export class MovementController {
             title: 'No stock movements',
             text: 'Stock changes will appear here after inventory is adjusted.'
         };
+    }
+
+    startLoadingFeedback(hasVisibleRows) {
+        this.stopLoadingFeedback();
+
+        if (!hasVisibleRows) {
+            this.view.showLoading();
+            return;
+        }
+
+        this.busyTimerId = window.setTimeout(() => {
+            this.view.setTableBusy?.(true);
+        }, 200);
+    }
+
+    stopLoadingFeedback() {
+        if (this.busyTimerId) {
+            window.clearTimeout(this.busyTimerId);
+            this.busyTimerId = null;
+        }
+
+        this.view.setTableBusy?.(false);
     }
 }

@@ -34,6 +34,11 @@ export class RemovedProductsView {
         }
     }
 
+    setTableBusy(isBusy) {
+        this.setBusyStyles(this.tableContainer, isBusy);
+        this.setPaginationBusy(isBusy);
+    }
+
     showEmptyState({ title = 'Bin is empty', text = 'There are no removed products to display.', buttonText = null, buttonAction = null, isSearch = false } = {}) {
         if (this.spinner) this.spinner.classList.add('d-none');
         if (this.paginationContainer) this.paginationContainer.classList.add('d-none');
@@ -109,5 +114,22 @@ export class RemovedProductsView {
 
     renderPagination({ currentPage, totalPages }, onPageChange) {
         renderPagination(this.pagination, this.paginationContainer, { currentPage, totalPages }, onPageChange);
+    }
+
+    setBusyStyles(element, isBusy) {
+        if (!element) return;
+
+        element.style.opacity = isBusy ? '0.65' : '';
+        element.style.pointerEvents = isBusy ? 'none' : '';
+        element.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    }
+
+    setPaginationBusy(isBusy) {
+        this.pagination?.querySelectorAll('.page-link').forEach((link) => {
+            link.classList.toggle('disabled', isBusy);
+            link.setAttribute('aria-disabled', isBusy ? 'true' : 'false');
+            link.style.pointerEvents = isBusy ? 'none' : '';
+            link.tabIndex = isBusy ? -1 : 0;
+        });
     }
 }

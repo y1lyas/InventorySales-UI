@@ -39,6 +39,18 @@ export class SaleDetailsView {
         this.showModal();
     }
 
+    hasVisibleDetails() {
+        return Boolean(this.detailsSection && !this.detailsSection.classList.contains('d-none'));
+    }
+
+    setDetailsBusy(isBusy) {
+        if (!this.detailsSection) return;
+
+        this.detailsSection.style.opacity = isBusy ? '0.65' : '';
+        this.detailsSection.style.pointerEvents = isBusy ? 'none' : '';
+        this.detailsSection.setAttribute('aria-busy', isBusy ? 'true' : 'false');
+    }
+
     showModal() {
         const modal = this.ensureModal();
         if (!modal) {
@@ -54,6 +66,11 @@ export class SaleDetailsView {
     showError(message) {
         if (this.loadingState) {
             this.loadingState.classList.add('d-none');
+        }
+
+        this.setDetailsBusy(false);
+        if (this.detailsSection) {
+            this.detailsSection.classList.add('d-none');
         }
 
         if (this.errorState) {
