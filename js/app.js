@@ -2,16 +2,19 @@ import { state } from './state/state.js';
 import { productApi } from './Product/api/productApi.js';
 import { categoryApi } from './Category/api/categoryApi.js';
 import { salesApi } from './Sale/api/salesApi.js';
+import { dashboardApi } from './Dashboard/api/dashboardApi.js';
 import { ProductService } from './Product/services/productService.js';
 import { CategoryService } from './Category/services/categoryService.js';
 import { StockMovementService } from './Product/services/stockMovementService.js';
 import { SaleService } from './Sale/services/saleService.js';
+import { DashboardService } from './Dashboard/services/dashboardService.js';
 import { ProductListController } from './Product/controllers/ProductListController.js';
 import { ProductController } from './Product/controllers/ProductController.js';
 import { MovementController } from './Product/controllers/movementController.js';
 import { CategoryController } from './Category/controllers/categoryController.js';
 import { SaleListController } from './Sale/controllers/SaleListController.js';
 import { SaleCreateController } from './Sale/controllers/SaleCreateController.js';
+import { DashboardController } from './Dashboard/controllers/dashboardController.js';
 import { ProductListView } from './Product/views/productListView.js';
 import { StockMovementsView } from './Product/views/stockMovementsView.js';
 import { AddProductView } from './Product/views/addProductView.js';
@@ -22,6 +25,7 @@ import { CategoryView } from './Category/views/categoryView.js';
 import { SaleListView } from './Sale/views/saleListView.js';
 import { SaleDetailsView } from './Sale/views/saleDetailsView.js';
 import { SaleCreateView } from './Sale/views/saleCreateView.js';
+import { DashboardView } from './Dashboard/views/dashboardView.js';
 
 let productSearchDebounceId = null;
 let trashSearchDebounceId = null;
@@ -34,6 +38,11 @@ function initializeApp() {
     const categoryService = new CategoryService(categoryApi, state.ui.categoriesPageSize);
     const stockMovementService = new StockMovementService(productApi);
     const saleService = new SaleService(salesApi, state.ui.salesPageSize);
+    const dashboardService = new DashboardService(dashboardApi);
+
+    if (document.getElementById('dashboard-loading')) {
+        initializeDashboardPage(dashboardService);
+    }
 
     if (document.getElementById('sales-table-body')) {
         initializeSalesPage(saleService);
@@ -54,6 +63,12 @@ function initializeApp() {
     if (document.getElementById('category-list')) {
         initializeCategoryPage(productService, categoryService);
     }
+}
+
+function initializeDashboardPage(dashboardService) {
+    const dashboardView = new DashboardView();
+    const dashboardController = new DashboardController(dashboardView, dashboardService);
+    dashboardController.initialize();
 }
 
 function initializeProductsPage(productService, categoryService) {
