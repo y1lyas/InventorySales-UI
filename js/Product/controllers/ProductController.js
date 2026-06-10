@@ -101,15 +101,28 @@ export class ProductController {
     }
 
     async openAdjustStockModal() {
+        if (!this.stockAdjustmentView) {
+            return;
+        }
+
+        this.stockAdjustmentView.show(this.state.movement.products);
+
         try {
             const products = await this.getProductOptions();
-            this.stockAdjustmentView?.show(products);
+            this.stockAdjustmentView.renderProducts(products);
         } catch (error) {
             this.feedbackView.showActionError(error.message || 'Failed to load products');
         }
     }
 
     async openAdjustPriceModal(productId = '') {
+        if (!this.priceAdjustmentView) {
+            return;
+        }
+
+        const initialProduct = productId ? this.findProductById(productId) : null;
+        this.priceAdjustmentView.show(this.state.movement.products, initialProduct);
+
         try {
             const products = await this.getProductOptions();
             const product = productId ? this.findProductById(productId) : null;
@@ -118,7 +131,7 @@ export class ProductController {
                 return;
             }
 
-            this.priceAdjustmentView?.show(products, product);
+            this.priceAdjustmentView.show(products, product);
         } catch (error) {
             this.feedbackView.showActionError(error.message || 'Failed to load products');
         }
@@ -254,7 +267,11 @@ export class ProductController {
 
     async getProductOptions() {
         if (!this.state.movement.products.length) {
-            this.state.movement.products = await this.productService.getAllProducts({ isDeleted: false });
+            if (this.state.products.length) {
+                this.state.movement.products = [...this.state.products];
+            } else {
+                this.state.movement.products = await this.productService.getAllProducts({ isDeleted: false });
+            }
         }
 
         return this.state.movement.products;
